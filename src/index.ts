@@ -93,3 +93,24 @@ export type {
   UseGeminiOptions,
   UseGeminiReturn,
 } from "./presentation/hooks";
+
+// =============================================================================
+// PROVIDER CONFIGURATION - Tier-based Setup
+// =============================================================================
+
+export {
+  providerFactory,
+  resolveProviderConfig,
+  getCostOptimizedConfig,
+  getQualityOptimizedConfig,
+} from "./providers";
+
+export type {
+  SubscriptionTier,
+  QualityPreference,
+  ProviderPreferences,
+  ProviderConfigInput,
+  ResolvedProviderConfig,
+  OptimizationStrategy,
+  ProviderFactoryOptions,
+} from "./providers";
