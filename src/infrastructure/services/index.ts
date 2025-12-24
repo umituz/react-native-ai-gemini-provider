@@ -14,10 +14,12 @@ export { geminiStreamingService } from "./gemini-streaming.service";
 export {
   geminiProviderService,
   createGeminiProvider,
-} from "./gemini-provider.service";
+  GeminiProvider,
+} from "./gemini-provider";
+
 export type {
   AIProviderConfig,
-  JobSubmission,
-  JobStatus,
   SubscribeOptions,
-} from "./gemini-provider.service";
+} from "./gemini-provider";
+
+export type { JobSubmission, JobStatus } from "../job/JobManager";

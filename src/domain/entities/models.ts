@@ -21,10 +21,10 @@ export const GEMINI_MODELS = {
   },
 
   // Image editing models - transforms/edits images with input image + prompt
-  // gemini-3-pro-image-preview is the highest quality for identity preservation
+  // gemini-2.5-flash-image is the most cost-effective (500 images/day free tier)
   IMAGE_EDIT: {
-    DEFAULT: "gemini-3-pro-image-preview",
-    FAST: "gemini-2.5-flash-image",
+    DEFAULT: "gemini-2.5-flash-image",
+    HIGH_QUALITY: "gemini-3-pro-image-preview",
     LEGACY: "gemini-2.0-flash-preview-image-generation",
   },
 
@@ -36,11 +36,12 @@ export const GEMINI_MODELS = {
 
 /**
  * Default models for each operation type
+ * Optimized for cost-effectiveness while maintaining quality
  */
 export const DEFAULT_MODELS = {
-  TEXT: GEMINI_MODELS.TEXT.FLASH,
+  TEXT: GEMINI_MODELS.TEXT.FLASH_LITE, // Most cost-effective for text
   TEXT_TO_IMAGE: GEMINI_MODELS.TEXT_TO_IMAGE.DEFAULT,
-  IMAGE_EDIT: GEMINI_MODELS.IMAGE_EDIT.DEFAULT,
+  IMAGE_EDIT: GEMINI_MODELS.IMAGE_EDIT.DEFAULT, // Uses gemini-2.5-flash-image (free tier)
   VIDEO: GEMINI_MODELS.VIDEO.FLASH,
 } as const;
 

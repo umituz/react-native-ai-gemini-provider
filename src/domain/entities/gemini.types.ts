@@ -10,9 +10,12 @@ export interface GeminiConfig {
   baseDelay?: number;
   maxDelay?: number;
   defaultTimeoutMs?: number;
-  defaultModel?: string;
-  /** Model used for image generation (default: gemini-2.0-flash-exp) */
-  imageModel?: string;
+  /** Model used for text generation (default: gemini-2.5-flash-lite) */
+  textModel?: string;
+  /** Model used for text-to-image generation (default: imagen-4.0-generate-001) */
+  textToImageModel?: string;
+  /** Model used for image editing/transformation (default: gemini-2.5-flash-image) */
+  imageEditModel?: string;
 }
 
 export interface GeminiGenerationConfig {

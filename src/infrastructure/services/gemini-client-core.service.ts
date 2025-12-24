@@ -14,8 +14,9 @@ const DEFAULT_CONFIG: Partial<GeminiConfig> = {
   baseDelay: 1000,
   maxDelay: 10000,
   defaultTimeoutMs: 60000,
-  defaultModel: DEFAULT_MODELS.TEXT,
-  imageModel: DEFAULT_MODELS.TEXT_TO_IMAGE,
+  textModel: DEFAULT_MODELS.TEXT,
+  textToImageModel: DEFAULT_MODELS.TEXT_TO_IMAGE,
+  imageEditModel: DEFAULT_MODELS.IMAGE_EDIT,
 };
 
 class GeminiClientCoreService {
@@ -28,8 +29,9 @@ class GeminiClientCoreService {
       // eslint-disable-next-line no-console
       console.log("[GeminiClient] initialize() called", {
         hasApiKey: !!config.apiKey,
-        defaultModel: config.defaultModel,
-        imageModel: config.imageModel,
+        textModel: config.textModel,
+        textToImageModel: config.textToImageModel,
+        imageEditModel: config.imageEditModel,
       });
     }
 
@@ -40,8 +42,9 @@ class GeminiClientCoreService {
     if (typeof __DEV__ !== "undefined" && __DEV__) {
       // eslint-disable-next-line no-console
       console.log("[GeminiClient] initialized successfully", {
-        defaultModel: this.config.defaultModel,
-        imageModel: this.config.imageModel,
+        textModel: this.config.textModel,
+        textToImageModel: this.config.textToImageModel,
+        imageEditModel: this.config.imageEditModel,
         maxRetries: this.config.maxRetries,
       });
     }
@@ -69,7 +72,7 @@ class GeminiClientCoreService {
 
   getModel(modelName?: string): GenerativeModel {
     this.validateInitialization();
-    const effectiveModel = modelName || this.config?.defaultModel || "gemini-1.5-flash";
+    const effectiveModel = modelName || this.config?.textModel || DEFAULT_MODELS.TEXT;
     return this.client!.getGenerativeModel({ model: effectiveModel });
   }
 

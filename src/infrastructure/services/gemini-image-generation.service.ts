@@ -34,7 +34,7 @@ class GeminiImageGenerationService {
     geminiClientCoreService.validateInitialization();
 
     const config = geminiClientCoreService.getConfig();
-    const imageModel = config?.imageModel || DEFAULT_MODELS.TEXT_TO_IMAGE;
+    const imageModel = config?.textToImageModel || DEFAULT_MODELS.TEXT_TO_IMAGE;
     const apiKey = config?.apiKey;
 
     if (typeof __DEV__ !== "undefined" && __DEV__) {

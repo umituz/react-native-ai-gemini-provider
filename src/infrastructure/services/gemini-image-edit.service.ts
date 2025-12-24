@@ -37,7 +37,7 @@ class GeminiImageEditService {
     geminiClientCoreService.validateInitialization();
 
     const config = geminiClientCoreService.getConfig();
-    const editModel = DEFAULT_MODELS.IMAGE_EDIT;
+    const editModel = config?.imageEditModel || DEFAULT_MODELS.IMAGE_EDIT;
     const apiKey = config?.apiKey;
 
     if (typeof __DEV__ !== "undefined" && __DEV__) {
