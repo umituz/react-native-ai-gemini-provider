@@ -15,7 +15,6 @@ import {
   getQualityOptimizedConfig,
 } from "./ProviderConfig";
 
-declare const __DEV__: boolean;
 
 export type OptimizationStrategy = "cost" | "quality" | "balanced";
 
@@ -49,15 +48,7 @@ class ProviderFactory {
 
     this.currentConfig = config;
 
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      console.log("[ProviderFactory] Initializing with config:", {
-        tier: config.subscriptionTier,
-        strategy: options.strategy || "balanced",
-        textModel: config.textModel,
-        imageEditModel: config.imageEditModel,
-        maxRetries: config.maxRetries,
-      });
-    }
+    this.currentConfig = config;
 
     // Initialize Gemini client with resolved config
     const geminiConfig: GeminiConfig = {
@@ -72,9 +63,7 @@ class ProviderFactory {
 
     geminiClientCoreService.initialize(geminiConfig);
 
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      console.log("[ProviderFactory] Provider initialized successfully");
-    }
+    geminiClientCoreService.initialize(geminiConfig);
   }
 
   /**
