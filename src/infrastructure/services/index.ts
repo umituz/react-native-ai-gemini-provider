@@ -10,6 +10,11 @@ export { geminiImageGenerationService } from "./gemini-image-generation.service"
 export { geminiImageEditService } from "./gemini-image-edit.service";
 export { geminiStreamingService } from "./gemini-streaming.service";
 
+// Modular services
+export { providerInitializer } from "./provider-initializer";
+export { jobProcessor } from "./job-processor";
+export { generationExecutor } from "./generation-executor";
+
 // Public provider API
 export {
   geminiProviderService,
