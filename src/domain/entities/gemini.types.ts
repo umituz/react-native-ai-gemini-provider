@@ -16,6 +16,8 @@ export interface GeminiConfig {
   textToImageModel?: string;
   /** Model used for image editing/transformation (default: gemini-2.5-flash-image) */
   imageEditModel?: string;
+  /** Model used for video generation (default: veo-3.1-fast-generate-preview) */
+  videoGenerationModel?: string;
 }
 
 export interface GeminiGenerationConfig {

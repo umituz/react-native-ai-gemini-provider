@@ -28,9 +28,16 @@ export const GEMINI_MODELS = {
     LEGACY: "gemini-2.0-flash-preview-image-generation",
   },
 
-  // Video understanding models
+  // Video understanding models (analysis only)
   VIDEO: {
     FLASH: "gemini-2.5-flash",
+  },
+
+  // Video generation models (Google Veo)
+  VIDEO_GENERATION: {
+    FAST: "veo-3.1-fast-generate-preview",
+    QUALITY: "veo-3.1-generate-preview",
+    LEGACY: "veo-2-generate-preview",
   },
 } as const;
 
@@ -43,6 +50,7 @@ export const DEFAULT_MODELS = {
   TEXT_TO_IMAGE: GEMINI_MODELS.TEXT_TO_IMAGE.DEFAULT,
   IMAGE_EDIT: GEMINI_MODELS.IMAGE_EDIT.DEFAULT, // Uses gemini-2.5-flash-image (free tier)
   VIDEO: GEMINI_MODELS.VIDEO.FLASH,
+  VIDEO_GENERATION: GEMINI_MODELS.VIDEO_GENERATION.FAST, // Fast generation for free tier
 } as const;
 
 /**
@@ -51,9 +59,10 @@ export const DEFAULT_MODELS = {
 export const RESPONSE_MODALITIES = {
   TEXT_ONLY: ["TEXT"] as const,
   IMAGE_ONLY: ["IMAGE"] as const,
+  VIDEO_ONLY: ["VIDEO"] as const,
   TEXT_AND_IMAGE: ["TEXT", "IMAGE"] as const,
 } as const;
 
-export type ResponseModality = "TEXT" | "IMAGE";
+export type ResponseModality = "TEXT" | "IMAGE" | "VIDEO";
 
 

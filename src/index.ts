@@ -33,6 +33,15 @@ export type {
   GeminiModel,
   GeminiImageGenerationResult,
   GeminiImageInput,
+  VideoGenerationInput,
+  VideoGenerationResult,
+  VideoGenerationProgress,
+  VideoGenerationOptions,
+  VideoGenerationError,
+  VideoAspectRatio,
+  VideoResolution,
+  VideoOperationStatus,
+  VeoOperation,
 } from "./domain/entities";
 
 export { GeminiErrorType } from "./domain/entities";
@@ -62,6 +71,7 @@ export {
   geminiImageGenerationService,
   geminiImageEditService,
   geminiStreamingService,
+  geminiVideoGenerationService,
   geminiProviderService,
   createGeminiProvider,
 } from "./infrastructure/services";

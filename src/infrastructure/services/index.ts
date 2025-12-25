@@ -9,6 +9,7 @@ export { geminiTextGenerationService } from "./gemini-text-generation.service";
 export { geminiImageGenerationService } from "./gemini-image-generation.service";
 export { geminiImageEditService } from "./gemini-image-edit.service";
 export { geminiStreamingService } from "./gemini-streaming.service";
+export { geminiVideoGenerationService } from "./gemini-video-generation.service";
 
 // Modular services
 export { providerInitializer } from "./provider-initializer";
