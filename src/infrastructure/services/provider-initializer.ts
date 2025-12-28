@@ -3,24 +3,20 @@
  * Handles initialization logic for Gemini Provider
  */
 
+import type { AIProviderConfig } from "@umituz/react-native-ai-generation-content";
 import type { GeminiConfig } from "../../domain/entities";
 import { geminiClientCoreService } from "./gemini-client-core.service";
 
 declare const __DEV__: boolean;
 
-export interface AIProviderConfig {
-    apiKey: string;
-    maxRetries?: number;
-    baseDelay?: number;
-    maxDelay?: number;
-    defaultTimeoutMs?: number;
-    textModel?: string;
-    textToImageModel?: string;
-    imageEditModel?: string;
+export interface GeminiProviderConfig extends AIProviderConfig {
+  textModel?: string;
+  textToImageModel?: string;
+  imageEditModel?: string;
 }
 
 export class ProviderInitializer {
-    initialize(config: AIProviderConfig): void {
+    initialize(config: GeminiProviderConfig): void {
         if (typeof __DEV__ !== "undefined" && __DEV__) {
             // eslint-disable-next-line no-console
             console.log("[GeminiProvider] Initializing...");

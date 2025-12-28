@@ -2,7 +2,7 @@
  * Infrastructure Services
  */
 
-// Core services
+// Core services (low-level SDK wrappers)
 export { geminiClientCoreService } from "./gemini-client-core.service";
 export { geminiRetryService } from "./gemini-retry.service";
 export { geminiTextGenerationService } from "./gemini-text-generation.service";
@@ -23,9 +23,14 @@ export {
   GeminiProvider,
 } from "./gemini-provider";
 
-export type {
-  AIProviderConfig,
-  SubscribeOptions,
-} from "./gemini-provider";
+export type { GeminiProviderConfig } from "./gemini-provider";
+export type { GeminiProviderConfig as AIProviderConfig } from "./provider-initializer";
 
-export type { JobSubmission, JobStatus } from "../job/JobManager";
+// Re-export types from generation-content for convenience
+export type {
+  IAIProvider,
+  JobSubmission,
+  JobStatus,
+  SubscribeOptions,
+  AIJobStatusType,
+} from "@umituz/react-native-ai-generation-content";

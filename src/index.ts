@@ -61,6 +61,22 @@ export {
 export type { ResponseModality } from "./domain/entities";
 
 // =============================================================================
+// DOMAIN LAYER - Feature Models
+// =============================================================================
+
+export {
+  GEMINI_IMAGE_FEATURE_MODELS,
+  GEMINI_VIDEO_FEATURE_MODELS,
+  getGeminiImageFeatureModel,
+  getGeminiVideoFeatureModel,
+  getAllFeatureModels,
+} from "./domain/constants";
+
+export type {
+  FeatureModelConfig,
+} from "./domain/constants";
+
+// =============================================================================
 // INFRASTRUCTURE LAYER - Services
 // =============================================================================
 
@@ -78,9 +94,12 @@ export {
 
 export type {
   AIProviderConfig,
+  GeminiProviderConfig,
+  IAIProvider,
   JobSubmission,
   JobStatus,
   SubscribeOptions,
+  AIJobStatusType,
 } from "./infrastructure/services";
 
 // =============================================================================
@@ -91,6 +110,31 @@ export {
   mapGeminiError,
   isGeminiErrorRetryable,
   categorizeGeminiError,
+  // Input builders
+  buildSingleImageInput,
+  buildDualImageInput,
+  buildUpscaleInput,
+  buildPhotoRestoreInput,
+  buildAIHugInput,
+  buildAIKissInput,
+  buildFaceSwapInput,
+  buildAnimeSelfieInput,
+  buildRemoveBackgroundInput,
+  buildRemoveObjectInput,
+  buildReplaceBackgroundInput,
+  buildHDTouchUpInput,
+  buildVideoFromDualImagesInput,
+} from "./infrastructure/utils";
+
+export type {
+  UpscaleOptions as GeminiUpscaleOptions,
+  PhotoRestoreOptions as GeminiPhotoRestoreOptions,
+  FaceSwapOptions as GeminiFaceSwapOptions,
+  AnimeSelfieOptions as GeminiAnimeSelfieOptions,
+  RemoveBackgroundOptions as GeminiRemoveBackgroundOptions,
+  RemoveObjectOptions as GeminiRemoveObjectOptions,
+  ReplaceBackgroundOptions as GeminiReplaceBackgroundOptions,
+  VideoFromImageOptions as GeminiVideoFromImageOptions,
 } from "./infrastructure/utils";
 
 // =============================================================================
