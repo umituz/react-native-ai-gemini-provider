@@ -34,10 +34,11 @@ export const GEMINI_MODELS = {
   },
 
   // Video generation models (Google Veo)
+  // See: https://ai.google.dev/gemini-api/docs/video
   VIDEO_GENERATION: {
-    FAST: "veo-3.1-fast-generate-preview",
-    QUALITY: "veo-3.1-generate-preview",
-    LEGACY: "veo-2-generate-preview",
+    DEFAULT: "veo-3.1-generate-preview",
+    VEO_3: "veo-3-generate-preview",
+    VEO_2: "veo-2-generate",
   },
 } as const;
 
@@ -50,7 +51,7 @@ export const DEFAULT_MODELS = {
   TEXT_TO_IMAGE: GEMINI_MODELS.TEXT_TO_IMAGE.DEFAULT,
   IMAGE_EDIT: GEMINI_MODELS.IMAGE_EDIT.DEFAULT, // Uses gemini-2.5-flash-image (free tier)
   VIDEO: GEMINI_MODELS.VIDEO.FLASH,
-  VIDEO_GENERATION: GEMINI_MODELS.VIDEO_GENERATION.FAST, // Fast generation for free tier
+  VIDEO_GENERATION: GEMINI_MODELS.VIDEO_GENERATION.DEFAULT, // veo-3.1-generate-preview
 } as const;
 
 /**

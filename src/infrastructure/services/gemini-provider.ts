@@ -10,6 +10,7 @@ import type {
   JobSubmission,
   JobStatus,
   SubscribeOptions,
+  RunOptions,
   ImageFeatureType,
   VideoFeatureType,
   ImageFeatureInputData,
@@ -72,9 +73,10 @@ export class GeminiProvider implements IAIProvider {
     options?: SubscribeOptions<T>,
   ): Promise<T> {
     options?.onQueueUpdate?.({ status: "IN_QUEUE" });
-    options?.onProgress?.(10);
 
-    const result = await generationExecutor.executeGeneration<T>(model, input);
+    const result = await generationExecutor.executeGeneration<T>(model, input, {
+      onProgress: options?.onProgress,
+    });
 
     options?.onProgress?.(100);
     options?.onQueueUpdate?.({ status: "COMPLETED" });
@@ -86,8 +88,11 @@ export class GeminiProvider implements IAIProvider {
   async run<T = unknown>(
     model: string,
     input: Record<string, unknown>,
+    options?: RunOptions,
   ): Promise<T> {
-    return generationExecutor.executeGeneration<T>(model, input);
+    return generationExecutor.executeGeneration<T>(model, input, {
+      onProgress: options?.onProgress,
+    });
   }
 
   async generateImage(prompt: string): Promise<GeminiImageGenerationResult> {

@@ -33,11 +33,30 @@ export interface VideoGenerationOptions {
 }
 
 /**
- * Input for video generation
+ * Input for text-to-video generation
+ */
+export interface TextToVideoInput {
+  prompt: string;
+  negativePrompt?: string;
+  options?: VideoGenerationOptions;
+}
+
+/**
+ * Input for image-to-video generation
+ */
+export interface ImageToVideoInput {
+  prompt: string;
+  image: string;
+  negativePrompt?: string;
+  options?: VideoGenerationOptions;
+}
+
+/**
+ * Input for video generation (supports both text-to-video and image-to-video)
  */
 export interface VideoGenerationInput {
   prompt: string;
-  image: string;
+  image?: string;
   negativePrompt?: string;
   options?: VideoGenerationOptions;
 }
@@ -92,6 +111,16 @@ export interface VideoGenerationError extends Error {
 }
 
 /**
+ * Generated video from Veo API
+ */
+export interface VeoGeneratedVideo {
+  video: {
+    uri?: string;
+    url?: string;
+  };
+}
+
+/**
  * Operation response from Veo API
  */
 export interface VeoOperation {
@@ -99,10 +128,18 @@ export interface VeoOperation {
   done: boolean;
   metadata?: Record<string, unknown>;
   response?: {
+    generatedVideos?: VeoGeneratedVideo[];
     candidates?: Array<{
       uri?: string;
       [key: string]: unknown;
     }>;
+    generateVideoResponse?: {
+      generatedSamples?: Array<{
+        video?: {
+          uri?: string;
+        };
+      }>;
+    };
   };
   error?: {
     code: number;
