@@ -14,11 +14,15 @@ import type {
 declare const __DEV__: boolean;
 
 interface ImagenApiResponse {
-  generatedImages?: Array<{
-    image?: {
-      imageBytes?: string;
-    };
+  predictions?: Array<{
+    bytesBase64Encoded?: string;
+    mimeType?: string;
   }>;
+  error?: {
+    code?: number;
+    message?: string;
+    status?: string;
+  };
 }
 
 class GeminiImageGenerationService {
@@ -52,6 +56,7 @@ class GeminiImageGenerationService {
       parameters: {
         sampleCount: 1,
         aspectRatio: "1:1",
+        personGeneration: "allow_adult",
       },
     };
 
@@ -60,6 +65,7 @@ class GeminiImageGenerationService {
       console.log("[GeminiClient] Imagen API request", {
         url,
         prompt: prompt.substring(0, 100) + "...",
+        parameters: requestBody.parameters,
       });
     }
 
@@ -81,6 +87,21 @@ class GeminiImageGenerationService {
       return res.json() as Promise<ImagenApiResponse>;
     });
 
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      // eslint-disable-next-line no-console
+      console.log("[GeminiClient] Imagen API raw response", {
+        hasPredictions: !!response.predictions,
+        predictionsCount: response.predictions?.length ?? 0,
+        hasError: !!response.error,
+        errorMessage: response.error?.message,
+        responseKeys: Object.keys(response),
+      });
+    }
+
+    if (response.error) {
+      throw new Error(`Imagen API error: ${response.error.message || response.error.status || "Unknown error"}`);
+    }
+
     const result: GeminiImageGenerationResult = {
       text: undefined,
       imageUrl: undefined,
@@ -88,13 +109,15 @@ class GeminiImageGenerationService {
       mimeType: "image/png",
     };
 
-    if (response.generatedImages && response.generatedImages.length > 0) {
-      const generatedImage = response.generatedImages[0];
-      const imageBytes = generatedImage.image?.imageBytes;
+    if (response.predictions && response.predictions.length > 0) {
+      const prediction = response.predictions[0];
+      const imageBytes = prediction.bytesBase64Encoded;
+      const mimeType = prediction.mimeType || "image/png";
 
       if (imageBytes) {
         result.imageBase64 = imageBytes;
-        result.imageUrl = `data:image/png;base64,${imageBytes}`;
+        result.imageUrl = `data:${mimeType};base64,${imageBytes}`;
+        result.mimeType = mimeType;
       }
     }
 
@@ -103,6 +126,7 @@ class GeminiImageGenerationService {
       console.log("[GeminiClient] generateImage() completed (Imagen)", {
         hasImage: !!result.imageBase64,
         imageDataLength: result.imageBase64?.length ?? 0,
+        mimeType: result.mimeType,
       });
     }
 

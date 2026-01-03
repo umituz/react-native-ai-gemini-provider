@@ -47,7 +47,7 @@ export class GeminiProvider implements IAIProvider {
   readonly providerName = "Google Gemini";
 
   initialize(config: AIProviderConfig): void {
-    providerInitializer.initialize(config as GeminiProviderConfig);
+    providerInitializer.initialize(config);
   }
 
   isInitialized(): boolean {
@@ -154,7 +154,7 @@ export class GeminiProvider implements IAIProvider {
         }
         return buildReplaceBackgroundInput(imageBase64, { prompt });
       default:
-        throw new Error(`Unknown image feature: ${feature}`);
+        throw new Error(`Unknown image feature: ${String(feature)}`);
     }
   }
 
@@ -183,7 +183,7 @@ export class GeminiProvider implements IAIProvider {
           ...options,
         });
       default:
-        throw new Error(`Unknown video feature: ${feature}`);
+        throw new Error(`Unknown video feature: ${String(feature)}`);
     }
   }
 }

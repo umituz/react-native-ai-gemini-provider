@@ -25,6 +25,14 @@ class GeminiClientCoreService {
   private initialized = false;
 
   initialize(config: GeminiConfig): void {
+    if (this.initialized) {
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        // eslint-disable-next-line no-console
+        console.log("[GeminiClient] Already initialized, skipping");
+      }
+      return;
+    }
+
     if (typeof __DEV__ !== "undefined" && __DEV__) {
       // eslint-disable-next-line no-console
       console.log("[GeminiClient] initialize() called", {
