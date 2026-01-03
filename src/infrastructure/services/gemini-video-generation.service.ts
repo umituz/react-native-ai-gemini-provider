@@ -4,6 +4,7 @@
  * @see https://ai.google.dev/gemini-api/docs/video
  */
 
+import { calculatePollingProgress } from "@umituz/react-native-ai-generation-content";
 import { geminiClientCoreService } from "./gemini-client-core.service";
 import { geminiRetryService } from "./gemini-retry.service";
 import { DEFAULT_MODELS } from "../../domain/entities";
@@ -197,7 +198,7 @@ class GeminiVideoGenerationService {
       await this.delay(DEFAULT_POLL_INTERVAL);
       attempts++;
 
-      const progress = Math.round(Math.min(95, 10 + (attempts / MAX_POLL_ATTEMPTS) * 85));
+      const progress = calculatePollingProgress(attempts, MAX_POLL_ATTEMPTS);
 
       onProgress?.({
         status: "processing",
