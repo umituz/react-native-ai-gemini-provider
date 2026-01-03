@@ -197,7 +197,7 @@ class GeminiVideoGenerationService {
       await this.delay(DEFAULT_POLL_INTERVAL);
       attempts++;
 
-      const progress = Math.min(95, 10 + (attempts / MAX_POLL_ATTEMPTS) * 85);
+      const progress = Math.round(Math.min(95, 10 + (attempts / MAX_POLL_ATTEMPTS) * 85));
 
       onProgress?.({
         status: "processing",
