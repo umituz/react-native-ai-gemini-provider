@@ -10,11 +10,12 @@ import type {
   JobSubmission,
   JobStatus,
   SubscribeOptions,
-  RunOptions,
   ImageFeatureType,
   VideoFeatureType,
   ImageFeatureInputData,
   VideoFeatureInputData,
+  ProviderCapabilities,
+  RunOptions,
 } from "@umituz/react-native-ai-generation-content";
 import type {
   GeminiImageInput,
@@ -43,6 +44,27 @@ import {
 
 export type { GeminiProviderConfig };
 
+/**
+ * Gemini provider capabilities
+ */
+const GEMINI_CAPABILITIES: ProviderCapabilities = {
+  imageFeatures: [
+    "upscale",
+    "photo-restore",
+    "face-swap",
+    "anime-selfie",
+    "remove-background",
+    "remove-object",
+    "hd-touch-up",
+    "replace-background",
+  ] as const,
+  videoFeatures: ["ai-hug", "ai-kiss"] as const,
+  textToImage: true,
+  textToVideo: true,
+  imageToVideo: true,
+  textToVoice: false,
+};
+
 export class GeminiProvider implements IAIProvider {
   readonly providerId = "gemini";
   readonly providerName = "Google Gemini";
@@ -53,6 +75,18 @@ export class GeminiProvider implements IAIProvider {
 
   isInitialized(): boolean {
     return providerInitializer.isInitialized();
+  }
+
+  getCapabilities(): ProviderCapabilities {
+    return GEMINI_CAPABILITIES;
+  }
+
+  isFeatureSupported(feature: ImageFeatureType | VideoFeatureType): boolean {
+    const capabilities = this.getCapabilities();
+    return (
+      capabilities.imageFeatures.includes(feature as ImageFeatureType) ||
+      capabilities.videoFeatures.includes(feature as VideoFeatureType)
+    );
   }
 
   submitJob(model: string, input: Record<string, unknown>): Promise<JobSubmission> {
@@ -75,10 +109,12 @@ export class GeminiProvider implements IAIProvider {
     options?.onQueueUpdate?.({ status: "IN_QUEUE" });
 
     const result = await generationExecutor.executeGeneration<T>(model, input, {
-      onProgress: options?.onProgress,
+      onProgress: (progress: number) => {
+        options?.onProgress?.({ progress, status: "IN_PROGRESS" });
+      },
     });
 
-    options?.onProgress?.(100);
+    options?.onProgress?.({ progress: 100, status: "COMPLETED" });
     options?.onQueueUpdate?.({ status: "COMPLETED" });
     options?.onResult?.(result);
 
@@ -91,7 +127,9 @@ export class GeminiProvider implements IAIProvider {
     options?: RunOptions,
   ): Promise<T> {
     return generationExecutor.executeGeneration<T>(model, input, {
-      onProgress: options?.onProgress,
+      onProgress: (progress: number) => {
+        options?.onProgress?.({ progress, status: "IN_PROGRESS" });
+      },
     });
   }
 

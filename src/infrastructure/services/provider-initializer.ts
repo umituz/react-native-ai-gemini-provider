@@ -32,9 +32,9 @@ export class ProviderInitializer {
             baseDelay: config.baseDelay,
             maxDelay: config.maxDelay,
             defaultTimeoutMs: config.defaultTimeoutMs,
-            textModel: config.textModel as string | undefined,
-            textToImageModel: config.textToImageModel as string | undefined,
-            imageEditModel: config.imageEditModel as string | undefined,
+            textModel: config.textModel,
+            textToImageModel: config.textToImageModel,
+            imageEditModel: config.imageEditModel,
         };
 
         geminiClientCoreService.initialize(geminiConfig);

@@ -14,6 +14,8 @@ import { geminiVideoGenerationService } from "./gemini-video-generation.service"
 import { ContentBuilder } from "../content/ContentBuilder";
 import { ResponseFormatter } from "../response/ResponseFormatter";
 
+declare const __DEV__: boolean;
+
 export interface ExecutionOptions {
     onProgress?: (progress: number) => void;
 }
@@ -27,8 +29,18 @@ export class GenerationExecutor {
         input: Record<string, unknown>,
         options?: ExecutionOptions,
     ): Promise<T> {
+        if (typeof __DEV__ !== "undefined" && __DEV__) {
+            // eslint-disable-next-line no-console
+            console.log("[GenerationExecutor] executeGeneration() called", { model, inputType: input.type });
+        }
+
         const isImageGeneration = input.generateImage === true || input.type === "image";
         const isVideoGeneration = this.isVideoModel(model) || input.type === "video";
+
+        if (typeof __DEV__ !== "undefined" && __DEV__) {
+            // eslint-disable-next-line no-console
+            console.log("[GenerationExecutor] Generation type:", { isImageGeneration, isVideoGeneration });
+        }
 
         if (isVideoGeneration) {
             return this.executeVideoGeneration<T>(input, options);
@@ -65,6 +77,11 @@ export class GenerationExecutor {
         input: Record<string, unknown>,
         options?: ExecutionOptions,
     ): Promise<T> {
+        if (typeof __DEV__ !== "undefined" && __DEV__) {
+            // eslint-disable-next-line no-console
+            console.log("[GenerationExecutor] executeVideoGeneration() called");
+        }
+
         const videoInput: VideoGenerationInput = {
             prompt: String(input.prompt || ""),
             image: input.image as string | undefined,
@@ -75,10 +92,21 @@ export class GenerationExecutor {
         };
 
         const onProgress = options?.onProgress
-            ? (p: VideoGenerationProgress) => options.onProgress?.(p.progress)
+            ? (p: VideoGenerationProgress) => {
+                if (typeof __DEV__ !== "undefined" && __DEV__) {
+                    // eslint-disable-next-line no-console
+                    console.log("[GenerationExecutor] Progress update:", p.progress);
+                }
+                options.onProgress?.(p.progress);
+            }
             : undefined;
 
         const result = await geminiVideoGenerationService.generateVideo(videoInput, onProgress);
+
+        if (typeof __DEV__ !== "undefined" && __DEV__) {
+            // eslint-disable-next-line no-console
+            console.log("[GenerationExecutor] Video generation completed");
+        }
 
         return {
             video: { url: result.videoUrl },

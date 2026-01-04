@@ -1,190 +1,134 @@
 /**
  * Gemini Video Generation Service
- * Handles video generation using Google Veo REST API (predictLongRunning)
+ * Orchestrates video generation using Google Veo REST API
  * @see https://ai.google.dev/gemini-api/docs/video
  */
 
-import { calculatePollingProgress } from "@umituz/react-native-ai-generation-content";
 import { geminiClientCoreService } from "./gemini-client-core.service";
 import { geminiRetryService } from "./gemini-retry.service";
+import { downloadVideoFromVeo } from "./gemini-video-downloader";
+import { extractVideoUrl } from "./gemini-video-url-extractor";
+import { createVideoError } from "./gemini-video-error";
 import { DEFAULT_MODELS } from "../../domain/entities";
 import type {
   VideoGenerationInput,
   VideoGenerationResult,
   VideoGenerationProgress,
   VeoOperation,
-  VideoGenerationError,
   TextToVideoInput,
 } from "../../domain/entities";
 
 declare const __DEV__: boolean;
 
-const DEFAULT_POLL_INTERVAL = 10000; // 10 seconds
-const MAX_POLL_DURATION = 300000; // 5 minutes
-const MAX_POLL_ATTEMPTS = Math.floor(MAX_POLL_DURATION / DEFAULT_POLL_INTERVAL);
+const POLL_INTERVAL = 10000;
+const MAX_POLL_DURATION = 300000;
+const MAX_POLL_ATTEMPTS = Math.floor(MAX_POLL_DURATION / POLL_INTERVAL);
 const VEO_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
+/** Calculate polling progress (10-95% range) */
+function calculateProgress(attempt: number, maxAttempts: number): number {
+  return Math.round(10 + (attempt / maxAttempts) * 85);
+}
+
 class GeminiVideoGenerationService {
-  /**
-   * Generate video from text prompt using Veo REST API (text-to-video)
-   * Uses predictLongRunning endpoint with instances/parameters format
-   */
   async generateTextToVideo(
     input: TextToVideoInput,
     onProgress?: (progress: VideoGenerationProgress) => void,
   ): Promise<VideoGenerationResult> {
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      // eslint-disable-next-line no-console
+      console.log("[GeminiVideoGeneration] generateTextToVideo() called", { prompt: input.prompt?.substring(0, 50) });
+    }
+
     geminiClientCoreService.validateInitialization();
-    this.validateTextInput(input);
+    this.validatePrompt(input.prompt);
 
     const config = geminiClientCoreService.getConfig();
-    const videoModel = config?.videoGenerationModel || DEFAULT_MODELS.VIDEO_GENERATION;
+    const model = config?.videoGenerationModel || DEFAULT_MODELS.VIDEO_GENERATION;
     const apiKey = config?.apiKey;
+    if (!apiKey) throw createVideoError("INVALID_INPUT", "API key is required");
 
     if (typeof __DEV__ !== "undefined" && __DEV__) {
       // eslint-disable-next-line no-console
-      console.log("[GeminiVideoGeneration] generateTextToVideo() called", {
-        model: videoModel,
-        promptLength: input.prompt.length,
-      });
+      console.log("[GeminiVideoGeneration] Starting operation with model:", model);
     }
 
-    // REST API uses predictLongRunning endpoint
-    const url = `${VEO_API_BASE}/models/${videoModel}:predictLongRunning`;
+    const operation = await this.startOperation(input, model, apiKey, onProgress);
 
-    // REST API format: instances array with parameters object
-    const requestBody = {
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      // eslint-disable-next-line no-console
+      console.log("[GeminiVideoGeneration] Operation started:", operation.name);
+    }
+
+    return this.pollOperation(operation.name, apiKey, model, onProgress);
+  }
+
+  async generateVideo(
+    input: VideoGenerationInput,
+    onProgress?: (progress: VideoGenerationProgress) => void,
+  ): Promise<VideoGenerationResult> {
+    if (!input.image) return this.generateTextToVideo(input, onProgress);
+
+    geminiClientCoreService.validateInitialization();
+    this.validatePrompt(input.prompt);
+
+    const config = geminiClientCoreService.getConfig();
+    const model = config?.videoGenerationModel || DEFAULT_MODELS.VIDEO_GENERATION;
+    const apiKey = config?.apiKey;
+    if (!apiKey) throw createVideoError("INVALID_INPUT", "API key is required");
+
+    const operation = await this.startImageToVideoOperation(input, model, apiKey, onProgress);
+    return this.pollOperation(operation.name, apiKey, model, onProgress);
+  }
+
+  private async startOperation(
+    input: TextToVideoInput,
+    model: string,
+    apiKey: string,
+    onProgress?: (progress: VideoGenerationProgress) => void,
+  ): Promise<VeoOperation> {
+    const url = `${VEO_API_BASE}/models/${model}:predictLongRunning`;
+    const body = {
       instances: [{ prompt: input.prompt }],
       parameters: {
         aspectRatio: input.options?.aspectRatio || "16:9",
         ...(input.negativePrompt && { negativePrompt: input.negativePrompt }),
       },
     };
-
     onProgress?.({ status: "queued", progress: 5 });
-
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[GeminiVideoGeneration] Request URL:", url);
-      // eslint-disable-next-line no-console
-      console.log("[GeminiVideoGeneration] Request body:", JSON.stringify(requestBody, null, 2));
-    }
-
-    const operation = await geminiRetryService.executeWithRetry(async () => {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey!,
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw this.createError("OPERATION_FAILED", `Veo API error (${res.status}): ${errorText}`, res.status);
-      }
-
-      return res.json() as Promise<VeoOperation>;
-    });
-
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[GeminiVideoGeneration] Operation started", {
-        operationName: operation.name,
-      });
-    }
-
-    onProgress?.({ status: "processing", progress: 10 });
-
-    return this.pollOperation(operation.name, apiKey!, videoModel, onProgress);
+    return geminiRetryService.executeWithRetry(() => this.postRequest(url, body, apiKey));
   }
 
-  /**
-   * Generate video from image and prompt using Veo REST API (image-to-video)
-   * Uses predictLongRunning endpoint with image in instances
-   */
-  async generateVideo(
+  private async startImageToVideoOperation(
     input: VideoGenerationInput,
+    model: string,
+    apiKey: string,
     onProgress?: (progress: VideoGenerationProgress) => void,
-  ): Promise<VideoGenerationResult> {
-    // If no image provided, use text-to-video
-    if (!input.image) {
-      return this.generateTextToVideo(input, onProgress);
-    }
-
-    geminiClientCoreService.validateInitialization();
-    this.validateInput(input);
-
-    const config = geminiClientCoreService.getConfig();
-    const videoModel = config?.videoGenerationModel || DEFAULT_MODELS.VIDEO_GENERATION;
-    const apiKey = config?.apiKey;
-
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[GeminiVideoGeneration] generateVideo() called", {
-        model: videoModel,
-        promptLength: input.prompt.length,
-        hasImage: !!input.image,
-      });
-    }
-
-    // REST API uses predictLongRunning endpoint
-    const url = `${VEO_API_BASE}/models/${videoModel}:predictLongRunning`;
-
-    // REST API format with image for image-to-video
-    const requestBody = {
-      instances: [{
-        prompt: input.prompt,
-        image: {
-          bytesBase64Encoded: input.image,
-        },
-      }],
+  ): Promise<VeoOperation> {
+    const url = `${VEO_API_BASE}/models/${model}:predictLongRunning`;
+    const body = {
+      instances: [{ prompt: input.prompt, image: { bytesBase64Encoded: input.image } }],
       parameters: {
         aspectRatio: input.options?.aspectRatio || "16:9",
         ...(input.negativePrompt && { negativePrompt: input.negativePrompt }),
       },
     };
-
     onProgress?.({ status: "queued", progress: 5 });
-
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[GeminiVideoGeneration] Request URL:", url);
-    }
-
-    const operation = await geminiRetryService.executeWithRetry(async () => {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey!,
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw this.createError("OPERATION_FAILED", `Veo API error (${res.status}): ${errorText}`, res.status);
-      }
-
-      return res.json() as Promise<VeoOperation>;
-    });
-
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[GeminiVideoGeneration] Operation started", {
-        operationName: operation.name,
-      });
-    }
-
-    onProgress?.({ status: "processing", progress: 10 });
-
-    return this.pollOperation(operation.name, apiKey!, videoModel, onProgress);
+    return geminiRetryService.executeWithRetry(() => this.postRequest(url, body, apiKey));
   }
 
-  /**
-   * Poll operation status until completion
-   */
+  private async postRequest(url: string, body: Record<string, unknown>, apiKey: string): Promise<VeoOperation> {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      throw createVideoError("OPERATION_FAILED", `Veo API error: ${await res.text()}`, res.status);
+    }
+    return res.json() as Promise<VeoOperation>;
+  }
+
   private async pollOperation(
     operationName: string,
     apiKey: string,
@@ -193,142 +137,68 @@ class GeminiVideoGenerationService {
   ): Promise<VideoGenerationResult> {
     const url = `${VEO_API_BASE}/${operationName}`;
     let attempts = 0;
+    onProgress?.({ status: "processing", progress: 10 });
+
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      // eslint-disable-next-line no-console
+      console.log("[GeminiVideoGeneration] Starting polling...", { operationName, maxAttempts: MAX_POLL_ATTEMPTS });
+    }
 
     while (attempts < MAX_POLL_ATTEMPTS) {
-      await this.delay(DEFAULT_POLL_INTERVAL);
+      await this.delay(POLL_INTERVAL);
       attempts++;
-
-      const progress = calculatePollingProgress(attempts, MAX_POLL_ATTEMPTS);
-
-      onProgress?.({
-        status: "processing",
-        progress,
-        estimatedTimeRemaining: (MAX_POLL_ATTEMPTS - attempts) * (DEFAULT_POLL_INTERVAL / 1000),
-      });
+      const progress = calculateProgress(attempts, MAX_POLL_ATTEMPTS);
+      onProgress?.({ status: "processing", progress });
 
       if (typeof __DEV__ !== "undefined" && __DEV__) {
         // eslint-disable-next-line no-console
-        console.log("[GeminiVideoGeneration] Polling operation", {
-          attempt: attempts,
-          progress: `${progress.toFixed(0)}%`,
-        });
+        console.log("[GeminiVideoGeneration] Poll attempt:", { attempts, progress });
       }
 
-      const operation = await geminiRetryService.executeWithRetry(async () => {
-        const res = await fetch(url, {
-          method: "GET",
-          headers: {
-            "x-goog-api-key": apiKey,
-          },
-        });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw this.createError("NETWORK", `Polling error (${res.status}): ${errorText}`, res.status);
-        }
-
-        return res.json() as Promise<VeoOperation>;
-      });
-
+      const operation = await this.fetchOperationStatus(url, apiKey);
       if (operation.error) {
-        throw this.createError("OPERATION_FAILED", operation.error.message, operation.error.code);
+        if (typeof __DEV__ !== "undefined" && __DEV__) {
+          // eslint-disable-next-line no-console
+          console.error("[GeminiVideoGeneration] Operation error:", operation.error);
+        }
+        throw createVideoError("OPERATION_FAILED", operation.error.message, operation.error.code);
       }
-
       if (operation.done) {
-        const videoUrl = this.extractVideoUrl(operation);
-
-        if (videoUrl) {
+        if (typeof __DEV__ !== "undefined" && __DEV__) {
+          // eslint-disable-next-line no-console
+          console.log("[GeminiVideoGeneration] Operation completed!");
+        }
+        const rawVideoUrl = extractVideoUrl(operation);
+        if (rawVideoUrl) {
+          if (typeof __DEV__ !== "undefined" && __DEV__) {
+            // eslint-disable-next-line no-console
+            console.log("[GeminiVideoGeneration] Downloading video...");
+          }
+          const result = await downloadVideoFromVeo(rawVideoUrl, apiKey);
           onProgress?.({ status: "completed", progress: 100 });
-
           return {
-            videoUrl,
-            metadata: {
-              duration: 8,
-              resolution: "720p",
-              aspectRatio: "16:9",
-              model,
-              operationName,
-            },
+            videoUrl: result.base64DataUri,
+            metadata: { duration: 8, resolution: "720p", aspectRatio: "16:9", model, operationName },
           };
         }
       }
     }
-
-    throw this.createError("TIMEOUT", `Operation timed out after ${MAX_POLL_DURATION / 1000} seconds`);
+    throw createVideoError("TIMEOUT", `Operation timed out after ${MAX_POLL_DURATION / 1000}s`);
   }
 
-  /**
-   * Extract video URL from operation response (handles multiple response formats)
-   */
-  private extractVideoUrl(operation: VeoOperation): string | null {
-    const response = operation.response;
-    if (!response) return null;
-
-    // Format 1: generatedVideos[].video.uri (new SDK format)
-    if (response.generatedVideos?.[0]?.video?.uri) {
-      return response.generatedVideos[0].video.uri;
-    }
-
-    // Format 2: generatedVideos[].video.url
-    if (response.generatedVideos?.[0]?.video?.url) {
-      return response.generatedVideos[0].video.url;
-    }
-
-    // Format 3: candidates[].uri (legacy format)
-    if (response.candidates?.[0]?.uri) {
-      return response.candidates[0].uri;
-    }
-
-    // Format 4: generateVideoResponse.generatedSamples[].video.uri (REST API format)
-    if (response.generateVideoResponse?.generatedSamples?.[0]?.video?.uri) {
-      return response.generateVideoResponse.generatedSamples[0].video.uri;
-    }
-
-    return null;
+  private async fetchOperationStatus(url: string, apiKey: string): Promise<VeoOperation> {
+    return geminiRetryService.executeWithRetry(async () => {
+      const res = await fetch(url, { method: "GET", headers: { "x-goog-api-key": apiKey } });
+      if (!res.ok) throw createVideoError("NETWORK", `Polling error: ${await res.text()}`, res.status);
+      return res.json() as Promise<VeoOperation>;
+    });
   }
 
-  /**
-   * Validate text-to-video input parameters
-   */
-  private validateTextInput(input: TextToVideoInput): void {
-    if (!input.prompt || input.prompt.trim().length === 0) {
-      throw this.createError("INVALID_INPUT", "Prompt is required");
-    }
-
-    if (input.prompt.length > 2000) {
-      throw this.createError("INVALID_INPUT", "Prompt exceeds 2000 characters");
-    }
+  private validatePrompt(prompt: string): void {
+    if (!prompt?.trim()) throw createVideoError("INVALID_INPUT", "Prompt is required");
+    if (prompt.length > 2000) throw createVideoError("INVALID_INPUT", "Prompt exceeds 2000 characters");
   }
 
-  /**
-   * Validate image-to-video input parameters
-   */
-  private validateInput(input: VideoGenerationInput): void {
-    this.validateTextInput(input);
-
-    if (!input.image || input.image.length === 0) {
-      throw this.createError("INVALID_INPUT", "Image is required for image-to-video");
-    }
-  }
-
-  /**
-   * Create typed error
-   */
-  private createError(
-    type: VideoGenerationError["type"],
-    message: string,
-    statusCode?: number,
-  ): VideoGenerationError {
-    const error = new Error(message) as VideoGenerationError;
-    error.type = type;
-    error.statusCode = statusCode;
-    error.retryable = type === "NETWORK" || type === "TIMEOUT";
-    return error;
-  }
-
-  /**
-   * Delay helper
-   */
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
