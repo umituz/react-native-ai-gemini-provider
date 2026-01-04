@@ -110,11 +110,11 @@ export class GeminiProvider implements IAIProvider {
 
     const result = await generationExecutor.executeGeneration<T>(model, input, {
       onProgress: (progress: number) => {
-        options?.onProgress?.({ progress, status: "IN_PROGRESS" });
+    options?.onProgress?.(progress);
       },
     });
 
-    options?.onProgress?.({ progress: 100, status: "COMPLETED" });
+    options?.onProgress?.(100);
     options?.onQueueUpdate?.({ status: "COMPLETED" });
     options?.onResult?.(result);
 
@@ -128,7 +128,7 @@ export class GeminiProvider implements IAIProvider {
   ): Promise<T> {
     return generationExecutor.executeGeneration<T>(model, input, {
       onProgress: (progress: number) => {
-        options?.onProgress?.({ progress, status: "IN_PROGRESS" });
+        options?.onProgress?.(progress);
       },
     });
   }
