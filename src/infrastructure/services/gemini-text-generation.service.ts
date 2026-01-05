@@ -159,6 +159,94 @@ class GeminiTextGenerationService {
 
     return this.generateContent(model, contents, config);
   }
+
+  /**
+   * Generate structured JSON response with schema
+   */
+  async generateStructuredText<T>(
+    model: string,
+    prompt: string,
+    schema: Record<string, unknown>,
+    config?: Omit<GeminiGenerationConfig, "responseMimeType" | "responseSchema">,
+  ): Promise<T> {
+    const generationConfig: GeminiGenerationConfig = {
+      ...config,
+      responseMimeType: "application/json",
+      responseSchema: schema as unknown as undefined,
+    };
+
+    const contents: GeminiContent[] = [
+      { parts: [{ text: prompt }], role: "user" },
+    ];
+
+    const response = await this.generateContent(model, contents, generationConfig);
+    const text = extractTextFromResponse(response);
+
+    // Clean and parse JSON (remove markdown code blocks if present)
+    const cleanedText = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+    try {
+      return JSON.parse(cleanedText) as T;
+    } catch (error) {
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        // eslint-disable-next-line no-console
+        console.error("[Gemini] Failed to parse structured response:", {
+          text: cleanedText.substring(0, 200),
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      throw new Error(`Failed to parse structured response: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Generate structured JSON response with images and schema
+   */
+  async generateStructuredTextWithImages<T>(
+    model: string,
+    prompt: string,
+    images: Array<{ base64: string; mimeType: string }>,
+    schema: Record<string, unknown>,
+    config?: Omit<GeminiGenerationConfig, "responseMimeType" | "responseSchema">,
+  ): Promise<T> {
+    const generationConfig: GeminiGenerationConfig = {
+      ...config,
+      responseMimeType: "application/json",
+      responseSchema: schema as unknown as undefined,
+    };
+
+    const parts: GeminiContent["parts"] = [{ text: prompt }];
+
+    for (const image of images) {
+      parts.push({
+        inlineData: {
+          mimeType: image.mimeType,
+          data: extractBase64Data(image.base64),
+        },
+      });
+    }
+
+    const contents: GeminiContent[] = [{ parts, role: "user" }];
+
+    const response = await this.generateContent(model, contents, generationConfig);
+    const text = extractTextFromResponse(response);
+
+    // Clean and parse JSON
+    const cleanedText = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+    try {
+      return JSON.parse(cleanedText) as T;
+    } catch (error) {
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        // eslint-disable-next-line no-console
+        console.error("[Gemini] Failed to parse structured response:", {
+          text: cleanedText.substring(0, 200),
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      throw new Error(`Failed to parse structured response: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
 }
 
 export const geminiTextGenerationService = new GeminiTextGenerationService();

@@ -28,6 +28,10 @@ export interface GeminiGenerationConfig {
   stopSequences?: string[];
   /** Response modalities for multimodal output (TEXT, IMAGE) */
   responseModalities?: Array<"TEXT" | "IMAGE">;
+  /** Response MIME type for structured output (e.g., "application/json") */
+  responseMimeType?: string;
+  /** Response schema for structured JSON output */
+  responseSchema?: Record<string, unknown>;
 }
 
 export interface GeminiSafetySettings {
