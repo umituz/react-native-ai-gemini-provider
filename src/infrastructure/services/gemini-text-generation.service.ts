@@ -58,7 +58,7 @@ class GeminiTextGenerationService {
         }),
       );
 
-      const response = result.response;
+      const response = (result as { response: GeminiResponse }).response;
 
       if (typeof __DEV__ !== "undefined" && __DEV__) {
         // eslint-disable-next-line no-console
@@ -69,10 +69,10 @@ class GeminiTextGenerationService {
       }
 
       return {
-        candidates: response.candidates?.map((candidate) => ({
+        candidates: response.candidates?.map((candidate: any) => ({
           content: {
             parts: candidate.content.parts
-              .map((part): GeminiPart | null => {
+              .map((part: any): GeminiPart | null => {
                 if ("text" in part && part.text !== undefined) {
                   return { text: part.text };
                 }
@@ -86,7 +86,7 @@ class GeminiTextGenerationService {
                 }
                 return null;
               })
-              .filter((p): p is GeminiPart => p !== null),
+              .filter((p: any): p is GeminiPart => p !== null),
             role: (candidate.content.role || "model") as "user" | "model",
           },
           finishReason: candidate.finishReason as GeminiFinishReason | undefined,

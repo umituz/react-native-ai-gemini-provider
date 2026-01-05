@@ -63,6 +63,7 @@ const GEMINI_CAPABILITIES: ProviderCapabilities = {
   textToVideo: true,
   imageToVideo: true,
   textToVoice: false,
+  textToText: true,
 };
 
 export class GeminiProvider implements IAIProvider {
@@ -110,11 +111,11 @@ export class GeminiProvider implements IAIProvider {
 
     const result = await generationExecutor.executeGeneration<T>(model, input, {
       onProgress: (progress: number) => {
-    options?.onProgress?.(progress);
+        options?.onProgress?.({ progress, status: "IN_PROGRESS" });
       },
     });
 
-    options?.onProgress?.(100);
+    options?.onProgress?.({ progress: 100, status: "COMPLETED" });
     options?.onQueueUpdate?.({ status: "COMPLETED" });
     options?.onResult?.(result);
 
@@ -128,7 +129,7 @@ export class GeminiProvider implements IAIProvider {
   ): Promise<T> {
     return generationExecutor.executeGeneration<T>(model, input, {
       onProgress: (progress: number) => {
-        options?.onProgress?.(progress);
+        options?.onProgress?.({ progress, status: "IN_PROGRESS" });
       },
     });
   }
