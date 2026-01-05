@@ -3,6 +3,8 @@
  * Configuration and response types for Google Gemini AI
  */
 
+import type { GenerationConfig } from "@google/generative-ai";
+
 export interface GeminiConfig {
   apiKey: string;
   baseUrl?: string;
@@ -20,19 +22,10 @@ export interface GeminiConfig {
   videoGenerationModel?: string;
 }
 
-export interface GeminiGenerationConfig {
-  temperature?: number;
-  topK?: number;
-  topP?: number;
-  maxOutputTokens?: number;
-  stopSequences?: string[];
-  /** Response modalities for multimodal output (TEXT, IMAGE) */
-  responseModalities?: Array<"TEXT" | "IMAGE">;
-  /** Response MIME type for structured output (e.g., "application/json") */
-  responseMimeType?: string;
-  /** Response schema for structured JSON output */
-  responseSchema?: Record<string, unknown>;
-}
+export type GeminiGenerationConfig = Omit<GenerationConfig, "responseSchema"> & {
+  /** Response schema for structured JSON output - compatible with Google SDK */
+  responseSchema?: GenerationConfig["responseSchema"];
+};
 
 export interface GeminiSafetySettings {
   category: GeminiHarmCategory;
