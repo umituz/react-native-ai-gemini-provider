@@ -1,20 +1,9 @@
 /**
  * @umituz/react-native-ai-gemini-provider
  * Google Gemini AI provider for React Native applications
- *
- * Usage:
- *   import {
- *     geminiClientService,
- *     geminiProviderService,
- *     useGemini,
- *     mapGeminiError,
- *   } from '@umituz/react-native-ai-gemini-provider';
  */
 
-// =============================================================================
-// DOMAIN LAYER - Types
-// =============================================================================
-
+// Domain Types
 export type {
   GeminiConfig,
   GeminiGenerationConfig,
@@ -42,30 +31,14 @@ export type {
   VideoResolution,
   VideoOperationStatus,
   VeoOperation,
-} from "./domain/entities";
-
-export { GeminiErrorType } from "./domain/entities";
-
-export type {
   GeminiErrorInfo,
   GeminiApiError,
+  ResponseModality,
 } from "./domain/entities";
 
-export { GeminiError } from "./domain/entities";
+export { GeminiErrorType, GeminiError, GEMINI_MODELS, DEFAULT_MODELS, RESPONSE_MODALITIES } from "./domain/entities";
 
-// Model Constants
-export {
-  GEMINI_MODELS,
-  DEFAULT_MODELS,
-  RESPONSE_MODALITIES,
-} from "./domain/entities";
-
-export type { ResponseModality } from "./domain/entities";
-
-// =============================================================================
-// DOMAIN LAYER - Feature Models
-// =============================================================================
-
+// Feature Models
 export {
   GEMINI_IMAGE_FEATURE_MODELS,
   GEMINI_VIDEO_FEATURE_MODELS,
@@ -74,14 +47,9 @@ export {
   getAllFeatureModels,
 } from "./domain/constants";
 
-export type {
-  FeatureModelConfig,
-} from "./domain/constants";
+export type { FeatureModelConfig } from "./domain/constants";
 
-// =============================================================================
-// INFRASTRUCTURE LAYER - Services
-// =============================================================================
-
+// Services
 export {
   geminiClientCoreService,
   geminiRetryService,
@@ -109,16 +77,12 @@ export type {
   RetryOptions,
 } from "./infrastructure/services";
 
-// =============================================================================
-// INFRASTRUCTURE LAYER - Utils
-// =============================================================================
-
+// Utils
 export {
   mapGeminiError,
   isGeminiErrorRetryable,
   categorizeGeminiError,
   createGeminiError,
-  // Model validation
   isValidModel,
   validateModel,
   getSafeModel,
@@ -128,7 +92,13 @@ export {
   isVideoGenerationModel,
   getModelCategory,
   getAllValidModels,
-  // Input builders
+  measureAsync,
+  measureSync,
+  debounce,
+  throttle,
+  PerformanceTimer,
+  PerformanceTracker,
+  performanceTracker,
   buildSingleImageInput,
   buildDualImageInput,
   buildUpscaleInput,
@@ -145,42 +115,41 @@ export {
 } from "./infrastructure/utils";
 
 export type {
-  UpscaleOptions as GeminiUpscaleOptions,
-  PhotoRestoreOptions as GeminiPhotoRestoreOptions,
-  FaceSwapOptions as GeminiFaceSwapOptions,
-  AnimeSelfieOptions as GeminiAnimeSelfieOptions,
-  RemoveBackgroundOptions as GeminiRemoveBackgroundOptions,
-  RemoveObjectOptions as GeminiRemoveObjectOptions,
-  ReplaceBackgroundOptions as GeminiReplaceBackgroundOptions,
-  VideoFromImageOptions as GeminiVideoFromImageOptions,
+  PreparedImage,
+  UpscaleOptions,
+  PhotoRestoreOptions,
+  FaceSwapOptions,
+  AnimeSelfieOptions,
+  RemoveBackgroundOptions,
+  RemoveObjectOptions,
+  ReplaceBackgroundOptions,
+  VideoFromImageOptions,
+  PerformanceMetrics,
 } from "./infrastructure/utils";
 
-// =============================================================================
-// PRESENTATION LAYER - Hooks
-// =============================================================================
-
+// Hooks
 export { useGemini } from "./presentation/hooks";
 
-export type {
-  UseGeminiOptions,
-  UseGeminiReturn,
-} from "./presentation/hooks";
+export type { UseGeminiOptions, UseGeminiReturn } from "./presentation/hooks";
 
-// =============================================================================
-// TELEMETRY - Monitoring and Observability
-// =============================================================================
-
+// Telemetry
 export { telemetryHooks } from "./infrastructure/telemetry";
+export type { TelemetryEvent, TelemetryListener } from "./infrastructure/telemetry";
 
+// Interceptors
+export { requestInterceptors, responseInterceptors } from "./infrastructure/interceptors";
 export type {
-  TelemetryEvent,
-  TelemetryListener,
-} from "./infrastructure/telemetry";
+  RequestContext,
+  RequestInterceptor,
+  ResponseContext,
+  ResponseInterceptor,
+} from "./infrastructure/interceptors";
 
-// =============================================================================
-// PROVIDER CONFIGURATION - Tier-based Setup
-// =============================================================================
+// Cache
+export { SimpleCache, modelSelectionCache } from "./infrastructure/cache";
+export type { CacheOptions } from "./infrastructure/cache";
 
+// Provider Config
 export {
   providerFactory,
   resolveProviderConfig,

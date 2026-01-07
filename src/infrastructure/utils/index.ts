@@ -33,6 +33,17 @@ export {
   getAllValidModels,
 } from "./model-validation.util";
 
+export {
+  measureAsync,
+  measureSync,
+  debounce,
+  throttle,
+  PerformanceTimer,
+  PerformanceTracker,
+  performanceTracker,
+} from "./performance.util";
+export type { PerformanceMetrics } from "./performance.util";
+
 // Input builders
 export {
   buildSingleImageInput,
