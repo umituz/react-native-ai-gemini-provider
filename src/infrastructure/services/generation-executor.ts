@@ -5,7 +5,9 @@
 
 import type {
     GeminiImageInput,
+    GeminiImageGenerationResult,
     VideoGenerationInput,
+    VideoGenerationResult,
     VideoGenerationProgress,
 } from "../../domain/entities";
 import { geminiTextGenerationService } from "./gemini-text-generation.service";
@@ -20,13 +22,29 @@ export interface ExecutionOptions {
     onProgress?: (progress: number) => void;
 }
 
+export type GenerationInput = {
+    type?: "text" | "image" | "video";
+    generateImage?: boolean;
+    prompt?: string;
+    images?: GeminiImageInput[];
+    generationConfig?: unknown;
+    image?: string;
+    negativePrompt?: string;
+    aspect_ratio?: string;
+};
+
+export type GenerationResult =
+    | string
+    | GeminiImageGenerationResult
+    | VideoGenerationResult;
+
 export class GenerationExecutor {
     private contentBuilder = new ContentBuilder();
     private responseFormatter = new ResponseFormatter();
 
-    async executeGeneration<T>(
+    async executeGeneration<T = GenerationResult>(
         model: string,
-        input: Record<string, unknown>,
+        input: GenerationInput,
         options?: ExecutionOptions,
     ): Promise<T> {
         if (typeof __DEV__ !== "undefined" && __DEV__) {
@@ -43,14 +61,13 @@ export class GenerationExecutor {
         }
 
         if (isVideoGeneration) {
-            return this.executeVideoGeneration<T>(input, options);
+            return this.executeVideoGeneration(input, options) as T;
         }
 
         if (isImageGeneration) {
-            const prompt = String(input.prompt || "");
-            const images = input.images as GeminiImageInput[] | undefined;
-            const result = await geminiImageGenerationService.generateImage(prompt, images);
-            return result as T;
+            const prompt = String(input.prompt ?? "");
+            const images = input.images;
+            return geminiImageGenerationService.generateImage(prompt, images) as T;
         }
 
         const contents = this.contentBuilder.buildContents(input);
@@ -73,21 +90,21 @@ export class GenerationExecutor {
     /**
      * Execute video generation using Veo API
      */
-    private async executeVideoGeneration<T>(
-        input: Record<string, unknown>,
+    private async executeVideoGeneration(
+        input: GenerationInput,
         options?: ExecutionOptions,
-    ): Promise<T> {
+    ): Promise<VideoGenerationResult> {
         if (typeof __DEV__ !== "undefined" && __DEV__) {
             // eslint-disable-next-line no-console
             console.log("[GenerationExecutor] executeVideoGeneration() called");
         }
 
         const videoInput: VideoGenerationInput = {
-            prompt: String(input.prompt || ""),
-            image: input.image as string | undefined,
-            negativePrompt: input.negativePrompt as string | undefined,
+            prompt: String(input.prompt ?? ""),
+            image: input.image,
+            negativePrompt: input.negativePrompt,
             options: {
-                aspectRatio: this.normalizeAspectRatio(input.aspect_ratio as string),
+                aspectRatio: this.normalizeAspectRatio(input.aspect_ratio),
             },
         };
 
@@ -109,10 +126,9 @@ export class GenerationExecutor {
         }
 
         return {
-            video: { url: result.videoUrl },
             videoUrl: result.videoUrl,
             metadata: result.metadata,
-        } as T;
+        };
     }
 
     /**

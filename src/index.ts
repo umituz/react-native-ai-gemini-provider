@@ -51,6 +51,8 @@ export type {
   GeminiApiError,
 } from "./domain/entities";
 
+export { GeminiError } from "./domain/entities";
+
 // Model Constants
 export {
   GEMINI_MODELS,
@@ -90,6 +92,7 @@ export {
   geminiVideoGenerationService,
   geminiProviderService,
   createGeminiProvider,
+  featureModelSelector,
 } from "./infrastructure/services";
 
 export type {
@@ -100,6 +103,9 @@ export type {
   JobStatus,
   SubscribeOptions,
   AIJobStatusType,
+  GenerationInput,
+  GenerationResult,
+  ExecutionOptions,
 } from "./infrastructure/services";
 
 // =============================================================================
@@ -110,6 +116,7 @@ export {
   mapGeminiError,
   isGeminiErrorRetryable,
   categorizeGeminiError,
+  createGeminiError,
   // Input builders
   buildSingleImageInput,
   buildDualImageInput,

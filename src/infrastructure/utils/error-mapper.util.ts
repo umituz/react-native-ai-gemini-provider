@@ -7,6 +7,7 @@ import {
   GeminiErrorType,
   type GeminiErrorInfo,
   type GeminiApiError,
+  GeminiError,
 } from "../../domain/entities";
 
 const ERROR_PATTERNS: Array<{
@@ -111,4 +112,12 @@ export function isGeminiErrorRetryable(error: unknown): boolean {
 
 export function categorizeGeminiError(error: unknown): GeminiErrorType {
   return mapGeminiError(error).type;
+}
+
+/**
+ * Create a GeminiError instance from an unknown error
+ */
+export function createGeminiError(error: unknown): GeminiError {
+  const errorInfo = mapGeminiError(error);
+  return GeminiError.fromError(error, errorInfo);
 }

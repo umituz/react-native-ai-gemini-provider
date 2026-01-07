@@ -37,3 +37,48 @@ export interface GeminiApiError {
     }>;
   };
 }
+
+/**
+ * Custom error class for Gemini API errors
+ */
+export class GeminiError extends Error {
+  readonly type: GeminiErrorType;
+  readonly retryable: boolean;
+  readonly statusCode?: number;
+  readonly originalError?: unknown;
+
+  constructor(info: GeminiErrorInfo) {
+    super(info.messageKey);
+    this.name = "GeminiError";
+    this.type = info.type;
+    this.retryable = info.retryable;
+    this.statusCode = info.statusCode;
+    this.originalError = info.originalError;
+
+    // Maintains proper stack trace (only available on V8)
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, GeminiError);
+    }
+  }
+
+  /**
+   * Check if error is retryable
+   */
+  isRetryable(): boolean {
+    return this.retryable;
+  }
+
+  /**
+   * Get error type
+   */
+  getErrorType(): GeminiErrorType {
+    return this.type;
+  }
+
+  /**
+   * Create GeminiError from unknown error
+   */
+  static fromError(_error: unknown, info: GeminiErrorInfo): GeminiError {
+    return new GeminiError(info);
+  }
+}

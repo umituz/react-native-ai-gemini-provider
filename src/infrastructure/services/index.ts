@@ -15,6 +15,7 @@ export { geminiVideoGenerationService } from "./gemini-video-generation.service"
 export { providerInitializer } from "./provider-initializer";
 export { jobProcessor } from "./job-processor";
 export { generationExecutor } from "./generation-executor";
+export { featureModelSelector } from "./feature-model-selector";
 
 // Public provider API
 export {
@@ -25,6 +26,13 @@ export {
 
 export type { GeminiProviderConfig } from "./gemini-provider";
 export type { GeminiProviderConfig as AIProviderConfig } from "./provider-initializer";
+
+// Generation executor types
+export type {
+  GenerationInput,
+  GenerationResult,
+  ExecutionOptions,
+} from "./generation-executor";
 
 // Re-export types from generation-content for convenience
 export type {

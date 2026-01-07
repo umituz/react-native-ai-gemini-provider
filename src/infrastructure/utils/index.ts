@@ -6,6 +6,7 @@ export {
   mapGeminiError,
   isGeminiErrorRetryable,
   categorizeGeminiError,
+  createGeminiError,
 } from "./error-mapper.util";
 
 export {
