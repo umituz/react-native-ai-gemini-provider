@@ -106,6 +106,7 @@ export type {
   GenerationInput,
   GenerationResult,
   ExecutionOptions,
+  RetryOptions,
 } from "./infrastructure/services";
 
 // =============================================================================
@@ -117,6 +118,16 @@ export {
   isGeminiErrorRetryable,
   categorizeGeminiError,
   createGeminiError,
+  // Model validation
+  isValidModel,
+  validateModel,
+  getSafeModel,
+  isTextModel,
+  isImageModel,
+  isImageEditModel,
+  isVideoGenerationModel,
+  getModelCategory,
+  getAllValidModels,
   // Input builders
   buildSingleImageInput,
   buildDualImageInput,
@@ -154,6 +165,17 @@ export type {
   UseGeminiOptions,
   UseGeminiReturn,
 } from "./presentation/hooks";
+
+// =============================================================================
+// TELEMETRY - Monitoring and Observability
+// =============================================================================
+
+export { telemetryHooks } from "./infrastructure/telemetry";
+
+export type {
+  TelemetryEvent,
+  TelemetryListener,
+} from "./infrastructure/telemetry";
 
 // =============================================================================
 // PROVIDER CONFIGURATION - Tier-based Setup

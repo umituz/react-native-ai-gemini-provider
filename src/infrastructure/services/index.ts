@@ -34,6 +34,9 @@ export type {
   ExecutionOptions,
 } from "./generation-executor";
 
+// Retry service types
+export type { RetryOptions } from "./gemini-retry.service";
+
 // Re-export types from generation-content for convenience
 export type {
   IAIProvider,

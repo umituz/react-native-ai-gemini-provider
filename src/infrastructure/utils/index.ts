@@ -21,6 +21,18 @@ export {
 } from "./image-preparer.util";
 export type { PreparedImage } from "./image-preparer.util";
 
+export {
+  isValidModel,
+  validateModel,
+  getSafeModel,
+  isTextModel,
+  isImageModel,
+  isImageEditModel,
+  isVideoGenerationModel,
+  getModelCategory,
+  getAllValidModels,
+} from "./model-validation.util";
+
 // Input builders
 export {
   buildSingleImageInput,
