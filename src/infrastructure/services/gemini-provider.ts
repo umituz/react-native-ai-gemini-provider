@@ -26,21 +26,8 @@ import { geminiImageEditService } from "./gemini-image-edit.service";
 import { providerInitializer, type GeminiProviderConfig } from "./provider-initializer";
 import { jobProcessor } from "./job-processor";
 import { generationExecutor } from "./generation-executor";
-import {
-  GEMINI_IMAGE_FEATURE_MODELS,
-  GEMINI_VIDEO_FEATURE_MODELS,
-} from "../../domain/constants/feature-models.constants";
-import {
-  buildUpscaleInput,
-  buildPhotoRestoreInput,
-  buildFaceSwapInput,
-  buildAnimeSelfieInput,
-  buildRemoveBackgroundInput,
-  buildRemoveObjectInput,
-  buildReplaceBackgroundInput,
-  buildHDTouchUpInput,
-  buildVideoFromDualImagesInput,
-} from "../utils/input-builders.util";
+import { featureInputBuilder } from "./feature-input-builder";
+import { featureModelSelector } from "./feature-model-selector";
 
 export type { GeminiProviderConfig };
 
@@ -63,7 +50,6 @@ const GEMINI_CAPABILITIES: ProviderCapabilities = {
   textToVideo: true,
   imageToVideo: true,
   textToVoice: false,
-  textToText: true,
 };
 
 export class GeminiProvider implements IAIProvider {
@@ -162,7 +148,7 @@ export class GeminiProvider implements IAIProvider {
    * Get model ID for an IMAGE feature
    */
   getImageFeatureModel(feature: ImageFeatureType): string {
-    return GEMINI_IMAGE_FEATURE_MODELS[feature];
+    return featureModelSelector.getImageFeatureModel(feature);
   }
 
   /**
@@ -172,41 +158,14 @@ export class GeminiProvider implements IAIProvider {
     feature: ImageFeatureType,
     data: ImageFeatureInputData,
   ): Record<string, unknown> {
-    const { imageBase64, targetImageBase64, prompt, options } = data;
-
-    switch (feature) {
-      case "upscale":
-        return buildUpscaleInput(imageBase64, options);
-      case "photo-restore":
-        return buildPhotoRestoreInput(imageBase64, options);
-      case "face-swap":
-        if (!targetImageBase64) {
-          throw new Error("Face swap requires target image");
-        }
-        return buildFaceSwapInput(imageBase64, targetImageBase64, options);
-      case "anime-selfie":
-        return buildAnimeSelfieInput(imageBase64, options);
-      case "remove-background":
-        return buildRemoveBackgroundInput(imageBase64, options);
-      case "remove-object":
-        return buildRemoveObjectInput(imageBase64, { prompt, ...options });
-      case "hd-touch-up":
-        return buildHDTouchUpInput(imageBase64, options);
-      case "replace-background":
-        if (!prompt) {
-          throw new Error("Replace background requires prompt");
-        }
-        return buildReplaceBackgroundInput(imageBase64, { prompt });
-      default:
-        throw new Error(`Unknown image feature: ${String(feature)}`);
-    }
+    return featureInputBuilder.buildImageFeatureInput(feature, data);
   }
 
   /**
    * Get model ID for a VIDEO feature
    */
   getVideoFeatureModel(feature: VideoFeatureType): string {
-    return GEMINI_VIDEO_FEATURE_MODELS[feature];
+    return featureModelSelector.getVideoFeatureModel(feature);
   }
 
   /**
@@ -216,19 +175,7 @@ export class GeminiProvider implements IAIProvider {
     feature: VideoFeatureType,
     data: VideoFeatureInputData,
   ): Record<string, unknown> {
-    const { sourceImageBase64, targetImageBase64, prompt, options } = data;
-
-    switch (feature) {
-      case "ai-hug":
-      case "ai-kiss":
-        return buildVideoFromDualImagesInput(sourceImageBase64, {
-          target_image: targetImageBase64,
-          motion_prompt: prompt,
-          ...options,
-        });
-      default:
-        throw new Error(`Unknown video feature: ${String(feature)}`);
-    }
+    return featureInputBuilder.buildVideoFeatureInput(feature, data);
   }
 }
 
