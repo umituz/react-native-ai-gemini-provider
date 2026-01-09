@@ -23,7 +23,10 @@ import type {
 } from "../../domain/entities";
 import { geminiImageGenerationService } from "./gemini-image-generation.service";
 import { geminiImageEditService } from "./gemini-image-edit.service";
-import { providerInitializer, type GeminiProviderConfig } from "./provider-initializer";
+import {
+  providerInitializer,
+  type GeminiProviderConfig,
+} from "./provider-initializer";
 import { jobProcessor } from "./job-processor";
 import { generationExecutor } from "./generation-executor";
 import { featureInputBuilder } from "./feature-input-builder";
@@ -50,6 +53,7 @@ const GEMINI_CAPABILITIES: ProviderCapabilities = {
   textToVideo: true,
   imageToVideo: true,
   textToVoice: false,
+  textToText: true,
 };
 
 export class GeminiProvider implements IAIProvider {
@@ -76,7 +80,10 @@ export class GeminiProvider implements IAIProvider {
     );
   }
 
-  submitJob(model: string, input: Record<string, unknown>): Promise<JobSubmission> {
+  submitJob(
+    model: string,
+    input: Record<string, unknown>,
+  ): Promise<JobSubmission> {
     return jobProcessor.submitJob(model, input);
   }
 
