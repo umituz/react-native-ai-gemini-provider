@@ -1,6 +1,6 @@
 {
   "name": "@umituz/react-native-ai-gemini-provider",
-  "version": "1.14.34",
+  "version": "1.14.35",
   "description": "Google Gemini AI provider for React Native applications",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
