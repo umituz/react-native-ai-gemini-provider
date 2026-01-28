@@ -36,7 +36,7 @@ export type {
   ResponseModality,
 } from "./domain/entities";
 
-export { GeminiErrorType, GeminiError, GEMINI_MODELS, DEFAULT_MODELS, RESPONSE_MODALITIES } from "./domain/entities";
+export { GeminiErrorType, GeminiError, GEMINI_MODELS, DEFAULT_MODELS, MODEL_PRICING, RESPONSE_MODALITIES } from "./domain/entities";
 
 // Feature Models
 export {
@@ -54,6 +54,7 @@ export {
   geminiClientCoreService,
   geminiRetryService,
   geminiTextGenerationService,
+  geminiStructuredTextService,
   geminiImageGenerationService,
   geminiImageEditService,
   geminiStreamingService,
