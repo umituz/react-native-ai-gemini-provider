@@ -161,3 +161,5 @@ class GeminiTextGenerationService {
 }
 
 export const geminiTextGenerationService = new GeminiTextGenerationService();
+
+export const geminiTextService = geminiTextGenerationService;

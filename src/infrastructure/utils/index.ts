@@ -44,6 +44,12 @@ export {
 } from "./performance.util";
 export type { PerformanceMetrics } from "./performance.util";
 
+export {
+  RateLimiter,
+  rateLimiter,
+} from "./rate-limiter.util";
+export type { RateLimiterOptions } from "./rate-limiter.util";
+
 // Input builders
 export {
   buildSingleImageInput,

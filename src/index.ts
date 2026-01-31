@@ -54,6 +54,7 @@ export {
   geminiClientCoreService,
   geminiRetryService,
   geminiTextGenerationService,
+  geminiTextService,
   geminiStructuredTextService,
   geminiImageGenerationService,
   geminiImageEditService,
@@ -113,6 +114,8 @@ export {
   buildReplaceBackgroundInput,
   buildHDTouchUpInput,
   buildVideoFromDualImagesInput,
+  RateLimiter,
+  rateLimiter,
 } from "./infrastructure/utils";
 
 export type {
@@ -126,6 +129,7 @@ export type {
   ReplaceBackgroundOptions,
   VideoFromImageOptions,
   PerformanceMetrics,
+  RateLimiterOptions,
 } from "./infrastructure/utils";
 
 // Hooks
