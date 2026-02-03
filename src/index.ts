@@ -1,6 +1,7 @@
 /**
  * @umituz/react-native-ai-gemini-provider
  * Google Gemini AI provider for React Native applications
+ * Text generation only - for image/video use FAL Provider
  */
 
 // Domain Types
@@ -20,34 +21,13 @@ export type {
   GeminiPromptFeedback,
   GeminiUsageMetadata,
   GeminiModel,
-  GeminiImageGenerationResult,
   GeminiImageInput,
-  VideoGenerationInput,
-  VideoGenerationResult,
-  VideoGenerationProgress,
-  VideoGenerationOptions,
-  VideoGenerationError,
-  VideoAspectRatio,
-  VideoResolution,
-  VideoOperationStatus,
-  VeoOperation,
   GeminiErrorInfo,
   GeminiApiError,
   ResponseModality,
 } from "./domain/entities";
 
 export { GeminiErrorType, GeminiError, GEMINI_MODELS, DEFAULT_MODELS, MODEL_PRICING, RESPONSE_MODALITIES } from "./domain/entities";
-
-// Feature Models
-export {
-  GEMINI_IMAGE_FEATURE_MODELS,
-  GEMINI_VIDEO_FEATURE_MODELS,
-  getGeminiImageFeatureModel,
-  getGeminiVideoFeatureModel,
-  getAllFeatureModels,
-} from "./domain/constants";
-
-export type { FeatureModelConfig } from "./domain/constants";
 
 // Services
 export {
@@ -56,23 +36,14 @@ export {
   geminiTextGenerationService,
   geminiTextService,
   geminiStructuredTextService,
-  geminiImageGenerationService,
-  geminiImageEditService,
   geminiStreamingService,
-  geminiVideoGenerationService,
   geminiProviderService,
   createGeminiProvider,
-  featureModelSelector,
+  GeminiProvider,
 } from "./infrastructure/services";
 
 export type {
-  AIProviderConfig,
   GeminiProviderConfig,
-  IAIProvider,
-  JobSubmission,
-  JobStatus,
-  SubscribeOptions,
-  AIJobStatusType,
   GenerationInput,
   GenerationResult,
   ExecutionOptions,
@@ -89,9 +60,6 @@ export {
   validateModel,
   getSafeModel,
   isTextModel,
-  isImageModel,
-  isImageEditModel,
-  isVideoGenerationModel,
   getModelCategory,
   getAllValidModels,
   measureAsync,
@@ -101,33 +69,11 @@ export {
   PerformanceTimer,
   PerformanceTracker,
   performanceTracker,
-  buildSingleImageInput,
-  buildDualImageInput,
-  buildUpscaleInput,
-  buildPhotoRestoreInput,
-  buildAIHugInput,
-  buildAIKissInput,
-  buildFaceSwapInput,
-  buildAnimeSelfieInput,
-  buildRemoveBackgroundInput,
-  buildRemoveObjectInput,
-  buildReplaceBackgroundInput,
-  buildHDTouchUpInput,
-  buildVideoFromDualImagesInput,
   RateLimiter,
   rateLimiter,
 } from "./infrastructure/utils";
 
 export type {
-  PreparedImage,
-  UpscaleOptions,
-  PhotoRestoreOptions,
-  FaceSwapOptions,
-  AnimeSelfieOptions,
-  RemoveBackgroundOptions,
-  RemoveObjectOptions,
-  ReplaceBackgroundOptions,
-  VideoFromImageOptions,
   PerformanceMetrics,
   RateLimiterOptions,
 } from "./infrastructure/utils";

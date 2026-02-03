@@ -3,15 +3,19 @@
  * Handles async job submission, tracking, and status management
  */
 
-import type {
-  JobSubmission,
-  JobStatus,
-  AIJobStatusType,
-} from "@umituz/react-native-ai-generation-content";
-
-export type { JobSubmission, JobStatus };
-
 declare const __DEV__: boolean;
+
+export type AIJobStatusType = "IN_QUEUE" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+
+export interface JobSubmission {
+  requestId: string;
+  statusUrl?: string;
+  responseUrl?: string;
+}
+
+export interface JobStatus {
+  status: AIJobStatusType;
+}
 
 interface PendingJob {
   model: string;
@@ -35,7 +39,6 @@ export class JobManager {
     });
 
     if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
       console.log("[JobManager] Job submitted:", { requestId, model });
     }
 

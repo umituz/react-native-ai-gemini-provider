@@ -1,66 +1,23 @@
 /**
  * Gemini Provider
- * Main AI provider implementation for Google Gemini
- * Implements IAIProvider for unified orchestration
+ * Text-only AI provider for Google Gemini
  */
 
-import type {
-  IAIProvider,
-  AIProviderConfig,
-  JobSubmission,
-  JobStatus,
-  SubscribeOptions,
-  ImageFeatureType,
-  VideoFeatureType,
-  ImageFeatureInputData,
-  VideoFeatureInputData,
-  ProviderCapabilities,
-  RunOptions,
-} from "@umituz/react-native-ai-generation-content";
-import type {
-  GeminiImageInput,
-  GeminiImageGenerationResult,
-} from "../../domain/entities";
-import { geminiImageGenerationService } from "./gemini-image-generation.service";
-import { geminiImageEditService } from "./gemini-image-edit.service";
-import {
-  providerInitializer,
-  type GeminiProviderConfig,
-} from "./provider-initializer";
-import { jobProcessor } from "./job-processor";
+import type { GeminiConfig, GeminiImageInput } from "../../domain/entities";
+import { providerInitializer } from "./provider-initializer";
 import { generationExecutor } from "./generation-executor";
-import { featureInputBuilder } from "./feature-input-builder";
-import { featureModelSelector } from "./feature-model-selector";
 
-export type { GeminiProviderConfig };
+export type GeminiProviderConfig = GeminiConfig;
 
 /**
- * Gemini provider capabilities
+ * Gemini Provider - Text Generation Only
+ * For image/video generation, use FAL Provider instead
  */
-const GEMINI_CAPABILITIES: ProviderCapabilities = {
-  imageFeatures: [
-    "upscale",
-    "photo-restore",
-    "face-swap",
-    "anime-selfie",
-    "remove-background",
-    "remove-object",
-    "hd-touch-up",
-    "replace-background",
-  ] as const,
-  videoFeatures: ["ai-hug", "ai-kiss"] as const,
-  textToImage: true,
-  textToVideo: true,
-  imageToVideo: true,
-  textToVoice: false,
-  textToText: true,
-};
-
-export class GeminiProvider implements IAIProvider {
+export class GeminiProvider {
   readonly providerId = "gemini";
   readonly providerName = "Google Gemini";
 
-  initialize(config: AIProviderConfig): void {
+  initialize(config: GeminiProviderConfig): void {
     providerInitializer.initialize(config);
   }
 
@@ -68,121 +25,43 @@ export class GeminiProvider implements IAIProvider {
     return providerInitializer.isInitialized();
   }
 
-  getCapabilities(): ProviderCapabilities {
-    return GEMINI_CAPABILITIES;
-  }
-
-  isFeatureSupported(feature: ImageFeatureType | VideoFeatureType): boolean {
-    const capabilities = this.getCapabilities();
-    return (
-      capabilities.imageFeatures.includes(feature as ImageFeatureType) ||
-      capabilities.videoFeatures.includes(feature as VideoFeatureType)
-    );
-  }
-
-  submitJob(
-    model: string,
-    input: Record<string, unknown>,
-  ): Promise<JobSubmission> {
-    return jobProcessor.submitJob(model, input);
-  }
-
-  getJobStatus(_model: string, requestId: string): Promise<JobStatus> {
-    return jobProcessor.getJobStatus(_model, requestId);
-  }
-
-  getJobResult<T = unknown>(_model: string, requestId: string): Promise<T> {
-    return jobProcessor.getJobResult<T>(_model, requestId);
-  }
-
-  async subscribe<T = unknown>(
-    model: string,
-    input: Record<string, unknown>,
-    options?: SubscribeOptions<T>,
-  ): Promise<T> {
-    options?.onQueueUpdate?.({ status: "IN_QUEUE" });
-
-    const result = await generationExecutor.executeGeneration<T>(model, input, {
-      onProgress: (progress: number) => {
-        options?.onProgress?.({ progress, status: "IN_PROGRESS" });
-      },
-    });
-
-    options?.onProgress?.({ progress: 100, status: "COMPLETED" });
-    options?.onQueueUpdate?.({ status: "COMPLETED" });
-    options?.onResult?.(result);
-
-    return result;
-  }
-
-  async run<T = unknown>(
-    model: string,
-    input: Record<string, unknown>,
-    options?: RunOptions,
-  ): Promise<T> {
-    return generationExecutor.executeGeneration<T>(model, input, {
-      onProgress: (progress: number) => {
-        options?.onProgress?.({ progress, status: "IN_PROGRESS" });
-      },
-    });
-  }
-
-  async generateImage(prompt: string): Promise<GeminiImageGenerationResult> {
-    return geminiImageGenerationService.generateImage(prompt);
-  }
-
-  async editImage(
-    prompt: string,
-    images: GeminiImageInput[],
-  ): Promise<GeminiImageGenerationResult> {
-    return geminiImageEditService.editImage(prompt, images);
-  }
-
-  async generateWithImages(
-    model: string,
-    prompt: string,
-    images: GeminiImageInput[],
-  ): Promise<{ text: string; response: unknown }> {
-    return generationExecutor.generateWithImages(model, prompt, images);
-  }
-
   reset(): void {
     providerInitializer.reset();
-    jobProcessor.clear();
   }
 
   /**
-   * Get model ID for an IMAGE feature
+   * Generate text from prompt
    */
-  getImageFeatureModel(feature: ImageFeatureType): string {
-    return featureModelSelector.getImageFeatureModel(feature);
+  async generateText(prompt: string, model?: string): Promise<string> {
+    return generationExecutor.executeTextGeneration(prompt, model);
   }
 
   /**
-   * Build input for an IMAGE feature
+   * Generate text with images (multimodal)
+   * Useful for "describe this image" scenarios
    */
-  buildImageFeatureInput(
-    feature: ImageFeatureType,
-    data: ImageFeatureInputData,
-  ): Record<string, unknown> {
-    return featureInputBuilder.buildImageFeatureInput(feature, data);
+  async generateTextWithImages(
+    prompt: string,
+    images: GeminiImageInput[],
+    model?: string,
+  ): Promise<string> {
+    const result = await generationExecutor.generateWithImages(
+      model ?? "gemini-2.0-flash",
+      prompt,
+      images,
+    );
+    return result.text;
   }
 
   /**
-   * Get model ID for a VIDEO feature
+   * Generate structured JSON response
    */
-  getVideoFeatureModel(feature: VideoFeatureType): string {
-    return featureModelSelector.getVideoFeatureModel(feature);
-  }
-
-  /**
-   * Build input for a VIDEO feature
-   */
-  buildVideoFeatureInput(
-    feature: VideoFeatureType,
-    data: VideoFeatureInputData,
-  ): Record<string, unknown> {
-    return featureInputBuilder.buildVideoFeatureInput(feature, data);
+  async generateStructuredText<T>(
+    prompt: string,
+    schema: Record<string, unknown>,
+    model?: string,
+  ): Promise<T> {
+    return generationExecutor.executeStructuredGeneration<T>(prompt, schema, model);
   }
 }
 

@@ -1,5 +1,6 @@
 /**
  * Infrastructure Utils
+ * Text-only utilities
  */
 
 export {
@@ -15,20 +16,10 @@ export {
 } from "./gemini-data-transformer.util";
 
 export {
-  prepareImageFromUri,
-  prepareImage,
-  isValidBase64,
-} from "./image-preparer.util";
-export type { PreparedImage } from "./image-preparer.util";
-
-export {
   isValidModel,
   validateModel,
   getSafeModel,
   isTextModel,
-  isImageModel,
-  isImageEditModel,
-  isVideoGenerationModel,
   getModelCategory,
   getAllValidModels,
 } from "./model-validation.util";
@@ -50,31 +41,5 @@ export {
 } from "./rate-limiter.util";
 export type { RateLimiterOptions } from "./rate-limiter.util";
 
-// Input builders
-export {
-  buildSingleImageInput,
-  buildDualImageInput,
-  buildUpscaleInput,
-  buildPhotoRestoreInput,
-  buildAIHugInput,
-  buildAIKissInput,
-  buildFaceSwapInput,
-  buildAnimeSelfieInput,
-  buildRemoveBackgroundInput,
-  buildRemoveObjectInput,
-  buildReplaceBackgroundInput,
-  buildHDTouchUpInput,
-  buildVideoFromDualImagesInput,
-} from "./input-builders.util";
-
-export type {
-  UpscaleOptions,
-  PhotoRestoreOptions,
-  FaceSwapOptions,
-  AnimeSelfieOptions,
-  RemoveBackgroundOptions,
-  RemoveObjectOptions,
-  ReplaceBackgroundOptions,
-  VideoFromImageOptions,
-  VideoFromDualImageOptions,
-} from "./input-builders.util";
+export { executeWithState } from "./async-state.util";
+export type { AsyncStateCallbacks, AsyncStateSetters } from "./async-state.util";
