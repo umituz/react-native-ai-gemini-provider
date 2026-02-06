@@ -4,7 +4,7 @@
  * Supports text, structured JSON, and multimodal generation
  */
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import type { GeminiGenerationConfig } from "../../domain/entities";
 import { DEFAULT_MODELS } from "../../domain/entities";
 import { geminiTextGenerationService, geminiStructuredTextService } from "../../infrastructure/services";
@@ -91,6 +91,10 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
     setJsonResult(null);
     setIsGenerating(false);
     setError(null);
+  }, []);
+
+  useEffect(() => {
+    return () => { abortRef.current = true; };
   }, []);
 
   return { generate, generateWithImage, generateJSON, result, jsonResult, isGenerating, error, reset };
