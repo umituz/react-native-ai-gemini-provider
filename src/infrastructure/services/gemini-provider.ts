@@ -32,7 +32,7 @@ export class GeminiProvider {
   /**
    * Generate text from prompt
    */
-  async generateText(prompt: string, model?: string): Promise<string> {
+  async generateText(prompt: string, model: string): Promise<string> {
     return generationExecutor.executeTextGeneration(prompt, model);
   }
 
@@ -43,10 +43,10 @@ export class GeminiProvider {
   async generateTextWithImages(
     prompt: string,
     images: GeminiImageInput[],
-    model?: string,
+    model: string,
   ): Promise<string> {
     const result = await generationExecutor.generateWithImages(
-      model ?? "gemini-2.0-flash",
+      model,
       prompt,
       images,
     );
@@ -59,7 +59,7 @@ export class GeminiProvider {
   async generateStructuredText<T>(
     prompt: string,
     schema: Record<string, unknown>,
-    model?: string,
+    model: string,
   ): Promise<T> {
     return generationExecutor.executeStructuredGeneration<T>(prompt, schema, model);
   }

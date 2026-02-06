@@ -25,13 +25,13 @@ export class GenerationExecutor {
   /**
    * Execute text generation
    */
-  async executeTextGeneration(prompt: string, model?: string): Promise<string> {
+  async executeTextGeneration(prompt: string, model: string): Promise<string> {
     if (typeof __DEV__ !== "undefined" && __DEV__) {
       console.log("[GenerationExecutor] executeTextGeneration() called", { model });
     }
 
     const response = await geminiTextGenerationService.generateContent(
-      model ?? "gemini-2.0-flash",
+      model,
       [{ parts: [{ text: prompt }], role: "user" }],
     );
 
@@ -44,14 +44,14 @@ export class GenerationExecutor {
   async executeStructuredGeneration<T>(
     prompt: string,
     schema: Record<string, unknown>,
-    model?: string,
+    model: string,
   ): Promise<T> {
     if (typeof __DEV__ !== "undefined" && __DEV__) {
       console.log("[GenerationExecutor] executeStructuredGeneration() called", { model });
     }
 
     return geminiStructuredTextService.generateStructuredText<T>(
-      model ?? "gemini-2.0-flash",
+      model,
       prompt,
       schema,
     );
