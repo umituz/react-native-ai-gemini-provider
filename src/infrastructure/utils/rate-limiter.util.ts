@@ -18,7 +18,7 @@ export class RateLimiter {
   private maxQueueSize: number;
 
   constructor(options: RateLimiterOptions = {}) {
-    this.minInterval = options.minInterval ?? 100; // 100ms minimum aralık
+    this.minInterval = options.minInterval ?? 100; // 100ms minimum interval
     this.maxQueueSize = options.maxQueueSize ?? 100;
   }
 

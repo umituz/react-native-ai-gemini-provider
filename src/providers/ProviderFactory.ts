@@ -48,8 +48,6 @@ class ProviderFactory {
 
     this.currentConfig = config;
 
-    this.currentConfig = config;
-
     // Initialize Gemini client with resolved config
     const geminiConfig: GeminiConfig = {
       apiKey: config.apiKey,
@@ -60,8 +58,6 @@ class ProviderFactory {
       defaultTimeoutMs: config.timeout,
       textModel: config.textModel,
     };
-
-    geminiClientCoreService.initialize(geminiConfig);
 
     geminiClientCoreService.initialize(geminiConfig);
   }
