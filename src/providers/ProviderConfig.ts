@@ -1,11 +1,7 @@
 
 import { DEFAULT_MODELS } from "../domain/entities";
 
-export type QualityPreference = "fast" | "balanced" | "high";
-
 export interface ProviderPreferences {
-  /** Quality preference */
-  quality?: QualityPreference;
   /** Request timeout (ms) */
   timeout?: number;
 }

@@ -11,17 +11,24 @@ export class PerformanceTimer {
   private metadata?: Record<string, unknown>;
 
   constructor(metadata?: Record<string, unknown>) {
-    this.startTime = Date.now();
+    // Use performance.now() for higher precision when available
+    this.startTime = typeof performance !== "undefined" && performance.now
+      ? performance.now()
+      : Date.now();
     this.metadata = metadata;
   }
 
   stop(): number {
-    this.endTime = Date.now();
+    this.endTime = typeof performance !== "undefined" && performance.now
+      ? performance.now()
+      : Date.now();
     return this.duration;
   }
 
   get duration(): number {
-    const end = this.endTime ?? Date.now();
+    const end = this.endTime ?? (typeof performance !== "undefined" && performance.now
+      ? performance.now()
+      : Date.now());
     return end - this.startTime;
   }
 
@@ -71,10 +78,12 @@ export function debounce<T extends (...args: never[]) => unknown>(
   let timeout: ReturnType<typeof setTimeout> | undefined;
   return (...args: Parameters<T>) => {
     const later = () => {
-      clearTimeout(timeout);
+      timeout = undefined;
       func(...args);
     };
-    clearTimeout(timeout);
+    if (timeout) {
+      clearTimeout(timeout);
+    }
     timeout = setTimeout(later, wait);
   };
 }

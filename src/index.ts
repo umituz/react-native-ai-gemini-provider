@@ -85,7 +85,6 @@ export {
 } from "./providers";
 
 export type {
-  QualityPreference,
   ProviderPreferences,
   ProviderConfigInput,
   ResolvedProviderConfig,

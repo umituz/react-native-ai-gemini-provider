@@ -8,7 +8,7 @@ import type {
 import { resolveProviderConfig } from "./ProviderConfig";
 
 export interface ProviderFactoryOptions extends ProviderConfigInput {
-  /** Quality preference strategy */
+  /** Provider strategy */
   strategy?: "cost" | "quality";
 }
 

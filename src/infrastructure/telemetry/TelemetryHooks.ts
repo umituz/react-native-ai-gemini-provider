@@ -119,6 +119,28 @@ class TelemetryHooks {
   }
 
   /**
+   * Remove a specific listener
+   */
+  unsubscribe(listener: TelemetryListener): void {
+    const index = this.listeners.indexOf(listener);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
+    }
+    this.failedListeners.delete(listener);
+    this.listenerFailureCounts.delete(listener);
+  }
+
+  /**
+   * Reset failure counts for all listeners (clear blacklist)
+   */
+  resetFailures(): void {
+    this.failedListeners.clear();
+    for (const listener of this.listeners) {
+      this.listenerFailureCounts.set(listener, 0);
+    }
+  }
+
+  /**
    * Clear all listeners
    */
   clear(): void {

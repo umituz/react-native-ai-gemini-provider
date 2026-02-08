@@ -6,7 +6,6 @@
 export { resolveProviderConfig } from "./ProviderConfig";
 
 export type {
-  QualityPreference,
   ProviderPreferences,
   ProviderConfigInput,
   ResolvedProviderConfig,

@@ -18,7 +18,13 @@ export class RateLimiter {
 
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (this.queue.length >= this.maxQueueSize) {
-      throw new Error(`Rate limiter queue is full (${this.maxQueueSize} requests pending). Please wait before retrying.`);
+      // Calculate estimated wait time to help users understand delay
+      const estimatedWait = this.queue.length * this.minInterval;
+      const waitSeconds = (estimatedWait / 1000).toFixed(1);
+      throw new Error(
+        `Rate limiter queue is full (${this.maxQueueSize} requests pending). ` +
+        `Estimated wait: ~${waitSeconds}s. Please wait before retrying.`
+      );
     }
 
     return new Promise((resolve, reject) => {
