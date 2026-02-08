@@ -14,6 +14,7 @@ class GeminiStreamingService {
     contents: GeminiContent[],
     onChunk: (text: string) => void,
     generationConfig?: GeminiGenerationConfig,
+    signal?: AbortSignal,
   ): Promise<string> {
     const genModel = geminiClientCoreService.getModel(model);
 
@@ -22,10 +23,14 @@ class GeminiStreamingService {
       parts: content.parts.map((part) => ({ text: part.text })),
     }));
 
-    const result = await genModel.generateContentStream({
+    const requestOptions = {
       contents: sdkContents as Parameters<typeof genModel.generateContentStream>[0] extends { contents: infer C } ? C : never,
       generationConfig,
-    });
+    };
+
+    const result = signal
+      ? await genModel.generateContentStream(requestOptions, { signal })
+      : await genModel.generateContentStream(requestOptions);
 
     let fullText = "";
 

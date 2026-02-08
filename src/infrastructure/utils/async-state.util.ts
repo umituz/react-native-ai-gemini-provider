@@ -1,4 +1,3 @@
-
 export interface AsyncStateCallbacks {
   onSuccess?: (result: string) => void;
   onError?: (error: string) => void;

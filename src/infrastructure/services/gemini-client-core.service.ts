@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai";
-import { DEFAULT_MODELS, GEMINI_MODELS } from "../../domain/entities";
+import { DEFAULT_MODELS } from "../../domain/entities";
 import type { GeminiConfig } from "../../domain/entities";
 
 const DEFAULT_CONFIG: Partial<GeminiConfig> = {
@@ -40,14 +40,16 @@ class GeminiClientCoreService {
   }
 
   /**
-   * Validate model name against known models
+   * Validate model name format (allows any valid model string)
    */
   private validateModel(modelName: string): void {
-    const knownModels = Object.values(GEMINI_MODELS.TEXT);
-    const isValid = knownModels.some((model) => model === modelName);
+    if (!modelName || typeof modelName !== "string" || modelName.trim().length === 0) {
+      throw new Error(`Invalid model name: "${modelName}". Model name must be a non-empty string.`);
+    }
 
-    if (!isValid) {
-      throw new Error(`Unknown model: "${modelName}". Known models: ${knownModels.join(", ")}`);
+    // Check for valid model format (starts with gemini-)
+    if (!modelName.startsWith("gemini-")) {
+      throw new Error(`Invalid model name: "${modelName}". Gemini models should start with "gemini-".`);
     }
   }
 
@@ -60,7 +62,7 @@ class GeminiClientCoreService {
 
     const effectiveModel = modelName || this.config?.textModel || DEFAULT_MODELS.TEXT;
 
-    // Validate model name
+    // Validate model name format (not against hardcoded list)
     this.validateModel(effectiveModel);
 
     return this.client.getGenerativeModel({ model: effectiveModel });

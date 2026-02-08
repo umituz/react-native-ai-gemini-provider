@@ -10,7 +10,6 @@ export class RateLimiter {
   private lastRequest = 0;
   private minInterval: number;
   private maxQueueSize: number;
-  private processQueuePromise: Promise<void> | null = null;
 
   constructor(options: RateLimiterOptions = {}) {
     this.minInterval = options.minInterval ?? 100; // 100ms minimum interval
@@ -32,36 +31,37 @@ export class RateLimiter {
         }
       });
 
-      // Ensure queue processing is running (wait for it to avoid race condition)
-      if (!this.processQueuePromise) {
-        this.processQueuePromise = this.processQueue();
-        this.processQueuePromise.then(() => {
-          this.processQueuePromise = null;
-        }).catch(() => {
-          this.processQueuePromise = null;
-        });
-      }
+      // Start queue processing if not already running
+      this.processQueue().catch(() => {
+        // Individual task errors are handled above, ignore queue processing errors
+      });
     });
   }
 
-  private async processQueue() {
-    if (this.processing || this.queue.length === 0) return;
-    this.processing = true;
-
-    while (this.queue.length > 0) {
-      const elapsed = Date.now() - this.lastRequest;
-      if (elapsed < this.minInterval) {
-        await new Promise((r) => setTimeout(r, this.minInterval - elapsed));
-      }
-
-      const task = this.queue.shift();
-      if (task) {
-        this.lastRequest = Date.now();
-        await task();
-      }
+  private async processQueue(): Promise<void> {
+    // Only one processQueue can run at a time
+    if (this.processing) {
+      return;
     }
 
-    this.processing = false;
+    this.processing = true;
+
+    try {
+      while (this.queue.length > 0) {
+        const elapsed = Date.now() - this.lastRequest;
+        if (elapsed < this.minInterval) {
+          await new Promise((r) => setTimeout(r, this.minInterval - elapsed));
+        }
+
+        const task = this.queue.shift();
+        if (task) {
+          this.lastRequest = Date.now();
+          await task();
+        }
+      }
+    } finally {
+      this.processing = false;
+    }
   }
 
   getQueueSize(): number {

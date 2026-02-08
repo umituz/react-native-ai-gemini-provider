@@ -1,4 +1,7 @@
 
+import type { InterceptorErrorStrategy } from "./RequestInterceptors";
+import { telemetryHooks } from "../telemetry";
+
 export interface ResponseContext<T = unknown> {
   model: string;
   feature?: string;
@@ -10,8 +13,6 @@ export interface ResponseContext<T = unknown> {
 export type ResponseInterceptor<T = unknown> = (
   context: ResponseContext<T>,
 ) => ResponseContext<T> | Promise<ResponseContext<T>>;
-
-export type InterceptorErrorStrategy = "fail" | "skip" | "log";
 
 class ResponseInterceptors {
   private interceptors: Array<ResponseInterceptor<unknown>> = [];
@@ -52,6 +53,9 @@ class ResponseInterceptors {
       try {
         result = await interceptor(result);
       } catch (error) {
+        // Log to telemetry
+        telemetryHooks.logError(context.model, error instanceof Error ? error : new Error(String(error)), context.feature);
+
         switch (this.errorStrategy) {
           case "fail":
             throw new Error(`Response interceptor failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -59,7 +63,7 @@ class ResponseInterceptors {
             // Skip this interceptor and continue with previous result
             break;
           case "log":
-            // Silently ignore but continue
+            // Error already logged, continue with previous result
             break;
         }
       }

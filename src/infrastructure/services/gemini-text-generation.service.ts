@@ -6,6 +6,8 @@ import type {
   GeminiGenerationConfig,
   GeminiResponse,
   GeminiPart,
+  GeminiFinishReason,
+  GeminiSafetyRating,
 } from "../../domain/entities";
 
 class GeminiTextGenerationService {
@@ -16,6 +18,7 @@ class GeminiTextGenerationService {
     model: string,
     contents: GeminiContent[],
     generationConfig?: GeminiGenerationConfig,
+    signal?: AbortSignal,
   ): Promise<GeminiResponse> {
     const genModel = geminiClientCoreService.getModel(model);
 
@@ -24,12 +27,20 @@ class GeminiTextGenerationService {
       parts: content.parts,
     }));
 
-    const result = await genModel.generateContent({
+    const requestOptions = {
       contents: sdkContents as Parameters<typeof genModel.generateContent>[0] extends { contents: infer C } ? C : never,
       generationConfig,
-    });
+    };
 
-    const response = (result as { response: GeminiResponse }).response;
+    const result = signal
+      ? await genModel.generateContent(requestOptions, { signal })
+      : await genModel.generateContent(requestOptions);
+
+    const response = result.response;
+
+    if (!response) {
+      throw new Error("No response received from Gemini API");
+    }
 
     return {
       candidates: response.candidates?.map((candidate) => {
@@ -41,14 +52,33 @@ class GeminiTextGenerationService {
           // Ignore unsupported part types (inlineData, etc.)
         }
 
+        // Map SDK finish reason to our domain type
+        const finishReason: GeminiFinishReason | undefined = candidate.finishReason
+          ? (candidate.finishReason as GeminiFinishReason)
+          : undefined;
+
+        // Map safety ratings
+        const safetyRatings: GeminiSafetyRating[] | undefined = candidate.safetyRatings
+          ? candidate.safetyRatings.map((rating) => ({
+              category: rating.category as GeminiSafetyRating["category"],
+              probability: rating.probability as GeminiSafetyRating["probability"],
+            }))
+          : undefined;
+
         return {
           content: {
             parts: transformedParts,
-            role: (candidate.content.role || "model"),
+            role: (candidate.content.role || "model") as "user" | "model",
           },
-          finishReason: candidate.finishReason,
+          finishReason,
+          safetyRatings,
         };
       }),
+      usageMetadata: response.usageMetadata ? {
+        promptTokenCount: response.usageMetadata.promptTokenCount,
+        candidatesTokenCount: response.usageMetadata.candidatesTokenCount,
+        totalTokenCount: response.usageMetadata.totalTokenCount,
+      } : undefined,
     };
   }
 
@@ -59,18 +89,15 @@ class GeminiTextGenerationService {
     model: string,
     prompt: string,
     config?: GeminiGenerationConfig,
+    signal?: AbortSignal,
   ): Promise<string> {
     const contents: GeminiContent[] = [
       { parts: [{ text: prompt }], role: "user" },
     ];
 
-    const response = await this.generateContent(model, contents, config);
+    const response = await this.generateContent(model, contents, config, signal);
     return extractTextFromResponse(response);
   }
-
-  /**
-   * Generate content with images (multimodal)
-   */
 }
 
 export const geminiTextGenerationService = new GeminiTextGenerationService();

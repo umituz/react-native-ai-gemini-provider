@@ -1,4 +1,6 @@
 
+import { telemetryHooks } from "../telemetry";
+
 export interface RequestContext {
   model: string;
   feature?: string;
@@ -47,6 +49,9 @@ class RequestInterceptors {
       try {
         result = await interceptor(result);
       } catch (error) {
+        // Log to telemetry
+        telemetryHooks.logError(context.model, error instanceof Error ? error : new Error(String(error)), context.feature);
+
         switch (this.errorStrategy) {
           case "fail":
             throw new Error(`Request interceptor failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -54,7 +59,7 @@ class RequestInterceptors {
             // Skip this interceptor and continue with previous result
             break;
           case "log":
-            // Silently ignore but continue
+            // Error already logged, continue with previous result
             break;
         }
       }

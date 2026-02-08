@@ -12,7 +12,6 @@ export { geminiStreamingService } from "./gemini-streaming.service";
 // Provider
 export {
   geminiProviderService,
-  createGeminiProvider,
   GeminiProvider,
 } from "./gemini-provider";
 export type { GeminiProviderConfig } from "./gemini-provider";

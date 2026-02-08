@@ -9,6 +9,7 @@ export { responseInterceptors } from "./ResponseInterceptors";
 export type {
   RequestContext,
   RequestInterceptor,
+  InterceptorErrorStrategy,
 } from "./RequestInterceptors";
 
 export type {

@@ -3,7 +3,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import type { GeminiGenerationConfig } from "../../domain/entities";
 import { DEFAULT_MODELS } from "../../domain/entities";
 import { geminiTextGenerationService, geminiStructuredTextService } from "../../infrastructure/services";
-import { executeWithState } from "../../infrastructure/utils";
+import { executeWithState } from "../../infrastructure/utils/async-state.util";
 
 export interface UseGeminiOptions {
   model?: string;
@@ -41,6 +41,11 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
   const model = options.model ?? DEFAULT_MODELS.TEXT;
 
   const generate = useCallback(async (prompt: string) => {
+    // Abort previous operation if still running
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     // Create new abort controller for this operation
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -54,11 +59,12 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
         async () => {
           // Check if this operation is still the latest one
           if (currentOpId !== operationIdRef.current) {
+            controller.abort();
             throw new Error("Operation cancelled by newer request");
           }
-          return geminiTextGenerationService.generateText(model, prompt, options.generationConfig);
+          return geminiTextGenerationService.generateText(model, prompt, options.generationConfig, controller.signal);
         },
-        (text) => {
+        (text: string) => {
           // Only update if this is still the latest operation
           if (currentOpId === operationIdRef.current) {
             setResult(text);
@@ -75,6 +81,11 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
   }, [model, options.generationConfig, setters, callbacks, options.onSuccess]);
 
   const generateJSON = useCallback(async <T>(prompt: string, schema?: Record<string, unknown>): Promise<T | null> => {
+    // Abort previous operation if still running
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     // Create new abort controller for this operation
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -88,14 +99,15 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
         async () => {
           // Check if this operation is still the latest one
           if (currentOpId !== operationIdRef.current) {
+            controller.abort();
             throw new Error("Operation cancelled by newer request");
           }
 
           if (schema) {
-            return geminiStructuredTextService.generateStructuredText<T>(model, prompt, schema, options.generationConfig);
+            return geminiStructuredTextService.generateStructuredText<T>(model, prompt, schema, options.generationConfig, controller.signal);
           }
 
-          const text = await geminiTextGenerationService.generateText(model, prompt, { ...options.generationConfig, responseMimeType: "application/json" });
+          const text = await geminiTextGenerationService.generateText(model, prompt, { ...options.generationConfig, responseMimeType: "application/json" }, controller.signal);
           const cleanedText = cleanJsonResponse(text);
 
           try {
@@ -104,7 +116,7 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
             throw new Error(`Failed to parse JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}. Response: ${cleanedText.substring(0, 200)}...`);
           }
         },
-        (parsed) => {
+        (parsed: unknown) => {
           // Only update if this is still the latest operation
           if (currentOpId === operationIdRef.current) {
             setJsonResult(parsed);

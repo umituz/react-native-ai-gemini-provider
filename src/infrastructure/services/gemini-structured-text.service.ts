@@ -4,6 +4,7 @@ import type { GenerationConfig } from "@google/generative-ai";
 import type {
   GeminiContent,
   GeminiGenerationConfig,
+  GeminiResponse,
 } from "../../domain/entities";
 
 
@@ -16,6 +17,7 @@ class GeminiStructuredTextService {
     prompt: string,
     schema: Record<string, unknown>,
     config?: Omit<GeminiGenerationConfig, "responseMimeType" | "responseSchema">,
+    signal?: AbortSignal,
   ): Promise<T> {
     // Validate schema structure before passing to SDK
     if (!schema || typeof schema !== "object" || Object.keys(schema).length === 0) {
@@ -37,6 +39,7 @@ class GeminiStructuredTextService {
       model,
       contents,
       generationConfig,
+      signal,
     );
 
     return this.parseJSONResponse<T>(response);
@@ -45,15 +48,23 @@ class GeminiStructuredTextService {
   /**
    * Parse JSON response from Gemini
    */
-  private parseJSONResponse<T>(response: unknown): T {
-    const candidates = (response as { candidates?: Array<{ content: { parts: Array<{ text?: string }> } }> }).candidates;
+  private parseJSONResponse<T>(response: GeminiResponse): T {
+    const candidates = response.candidates;
+
+    if (!candidates || candidates.length === 0) {
+      throw new Error("No candidates in response");
+    }
 
     let text = "";
 
-    if (candidates?.[0]?.content?.parts) {
+    if (candidates[0]?.content?.parts) {
       text = candidates[0].content.parts
-        .map((part) => part.text || "")
+        .map((part) => "text" in part ? (part.text || "") : "")
         .join("");
+    }
+
+    if (!text || text.trim().length === 0) {
+      throw new Error("Empty response received from Gemini");
     }
 
     // Clean and parse JSON (remove markdown code blocks if present)
@@ -62,7 +73,7 @@ class GeminiStructuredTextService {
     try {
       return JSON.parse(cleanedText) as T;
     } catch (error) {
-      throw new Error(`Failed to parse structured response: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Failed to parse structured response: ${error instanceof Error ? error.message : String(error)}. Cleaned text: ${cleanedText.substring(0, 200)}...`);
     }
   }
 }

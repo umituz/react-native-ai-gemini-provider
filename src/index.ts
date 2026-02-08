@@ -30,7 +30,6 @@ export {
   geminiStructuredTextService,
   geminiStreamingService,
   geminiProviderService,
-  createGeminiProvider,
   GeminiProvider,
 } from "./infrastructure/services";
 
@@ -42,6 +41,7 @@ export {
   isGeminiErrorRetryable,
   categorizeGeminiError,
   createGeminiError,
+  extractTextFromResponse,
   measureAsync,
   measureSync,
   debounce,
@@ -71,7 +71,7 @@ export type {
   RequestContext,
   RequestInterceptor,
   InterceptorErrorStrategy,
-} from "./infrastructure/interceptors/RequestInterceptors";
+} from "./infrastructure/interceptors";
 
 export type {
   ResponseContext,

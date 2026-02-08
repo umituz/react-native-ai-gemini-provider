@@ -3,11 +3,11 @@ import type { GeminiResponse } from "../../domain/entities";
 
 
 export function extractTextFromResponse(response: GeminiResponse): string {
-  const candidate = response.candidates?.[0];
-
-  if (!candidate) {
+  if (!response.candidates || response.candidates.length === 0) {
     throw new Error("No response candidates");
   }
+
+  const candidate = response.candidates[0];
 
   // Handle all finish reasons appropriately
   switch (candidate.finishReason) {
@@ -19,6 +19,7 @@ export function extractTextFromResponse(response: GeminiResponse): string {
     case "FINISH_REASON_UNSPECIFIED":
     case "OTHER":
     case "STOP":
+    case undefined:
       // Continue to extract text
       break;
   }

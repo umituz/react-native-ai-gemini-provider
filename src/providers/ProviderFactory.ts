@@ -14,6 +14,7 @@ export interface ProviderFactoryOptions extends ProviderConfigInput {
 
 class ProviderFactory {
   private currentConfig: ResolvedProviderConfig | null = null;
+  private currentOptions: ProviderFactoryOptions | null = null;
 
   /**
    * Initialize provider with configuration
@@ -27,6 +28,7 @@ class ProviderFactory {
     }
 
     this.currentConfig = config;
+    this.currentOptions = options;
 
     // Initialize Gemini client with resolved config
     const geminiConfig: GeminiConfig = {
@@ -57,25 +59,33 @@ class ProviderFactory {
    * Note: Changing apiKey requires full re-initialization
    */
   updateConfig(updates: Partial<ProviderConfigInput>): void {
-    if (!this.currentConfig) {
+    if (!this.currentConfig || !this.currentOptions) {
       throw new Error("Provider not initialized. Call initialize() first.");
     }
 
     // If API key is changing, we need to re-initialize
     if (updates.apiKey && updates.apiKey !== this.currentConfig.apiKey) {
-      const newInput: ProviderConfigInput = {
+      const newInput: ProviderFactoryOptions = {
         apiKey: updates.apiKey,
-        preferences: updates.preferences || {},
+        preferences: updates.preferences || this.currentOptions.preferences,
+        strategy: this.currentOptions.strategy,
       };
       this.initialize(newInput);
       return;
     }
 
     // For other updates, merge with current config
-    this.currentConfig = {
-      ...this.currentConfig,
+    const mergedPreferences = {
+      ...this.currentOptions.preferences,
       ...updates.preferences,
-      timeout: updates.preferences?.timeout ?? this.currentConfig.timeout,
+    };
+
+    this.currentOptions.preferences = mergedPreferences;
+
+    this.currentConfig = {
+      apiKey: this.currentConfig.apiKey,
+      textModel: this.currentConfig.textModel,
+      timeout: mergedPreferences.timeout ?? this.currentConfig.timeout,
     };
   }
 }
