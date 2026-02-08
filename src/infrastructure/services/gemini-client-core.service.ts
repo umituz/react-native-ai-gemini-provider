@@ -15,8 +15,6 @@ const DEFAULT_CONFIG: Partial<GeminiConfig> = {
   maxDelay: 10000,
   defaultTimeoutMs: 60000,
   textModel: DEFAULT_MODELS.TEXT,
-  textToImageModel: DEFAULT_MODELS.TEXT_TO_IMAGE,
-  imageEditModel: DEFAULT_MODELS.IMAGE_EDIT,
 };
 
 class GeminiClientCoreService {
@@ -38,8 +36,6 @@ class GeminiClientCoreService {
       console.log("[GeminiClient] initialize() called", {
         hasApiKey: !!config.apiKey,
         textModel: config.textModel,
-        textToImageModel: config.textToImageModel,
-        imageEditModel: config.imageEditModel,
       });
     }
 
@@ -51,8 +47,6 @@ class GeminiClientCoreService {
       // eslint-disable-next-line no-console
       console.log("[GeminiClient] initialized successfully", {
         textModel: this.config.textModel,
-        textToImageModel: this.config.textToImageModel,
-        imageEditModel: this.config.imageEditModel,
         maxRetries: this.config.maxRetries,
       });
     }

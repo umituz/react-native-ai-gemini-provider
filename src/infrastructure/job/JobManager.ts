@@ -3,7 +3,6 @@
  * Handles async job submission, tracking, and status management
  */
 
-declare const __DEV__: boolean;
 
 export type AIJobStatusType = "IN_QUEUE" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
 
@@ -38,9 +37,6 @@ export class JobManager {
       status: "IN_QUEUE",
     });
 
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      console.log("[JobManager] Job submitted:", { requestId, model });
-    }
 
     return {
       requestId,

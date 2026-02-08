@@ -12,7 +12,7 @@ export interface AsyncStateSetters {
   setIsGenerating: (value: boolean) => void;
   setError: (value: string | null) => void;
   setResult: (value: string | null) => void;
-  setJsonResult: (value: unknown | null) => void;
+  setJsonResult: (value: unknown) => void;
 }
 
 /**

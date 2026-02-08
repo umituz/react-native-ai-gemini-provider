@@ -23,20 +23,7 @@ class GeminiStreamingService {
 
     const sdkContents = contents.map((content) => ({
       role: content.role || "user",
-      parts: content.parts.map((part) => {
-        if ("text" in part) {
-          return { text: part.text };
-        }
-        if ("inlineData" in part) {
-          return {
-            inlineData: {
-              mimeType: part.inlineData.mimeType,
-              data: part.inlineData.data,
-            },
-          };
-        }
-        return part;
-      }),
+      parts: content.parts.map((part) => ({ text: part.text })),
     }));
 
     const result = await genModel.generateContentStream({

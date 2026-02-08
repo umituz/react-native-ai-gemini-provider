@@ -5,7 +5,7 @@
 
 import { geminiClientCoreService } from "./gemini-client-core.service";
 import { geminiRetryService } from "./gemini-retry.service";
-import { extractBase64Data, extractTextFromResponse } from "../utils/gemini-data-transformer.util";
+import { extractTextFromResponse } from "../utils/gemini-data-transformer.util";
 import type {
   GeminiContent,
   GeminiGenerationConfig,
@@ -34,17 +34,6 @@ class GeminiTextGenerationService {
     const sdkContents = contents.map((content) => ({
       role: content.role || "user",
       parts: content.parts.map((part) => {
-        if ("text" in part) {
-          return { text: part.text };
-        }
-        if ("inlineData" in part) {
-          return {
-            inlineData: {
-              mimeType: part.inlineData.mimeType,
-              data: part.inlineData.data,
-            },
-          };
-        }
         return part;
       }),
     }));
@@ -74,14 +63,6 @@ class GeminiTextGenerationService {
               .map((part): GeminiPart | null => {
                 if ("text" in part && part.text !== undefined) {
                   return { text: part.text };
-                }
-                if ("inlineData" in part && part.inlineData) {
-                  return {
-                    inlineData: {
-                      mimeType: part.inlineData.mimeType,
-                      data: part.inlineData.data,
-                    },
-                  };
                 }
                 return null;
               })
@@ -122,42 +103,6 @@ class GeminiTextGenerationService {
   /**
    * Generate content with images (multimodal)
    */
-  async generateWithImages(
-    model: string,
-    prompt: string,
-    images: Array<{ base64: string; mimeType: string }>,
-    config?: GeminiGenerationConfig,
-  ): Promise<GeminiResponse> {
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[GeminiClient] generateWithImages() called", {
-        model,
-        promptLength: prompt.length,
-        imagesCount: images.length,
-        imageMimeTypes: images.map(i => i.mimeType),
-      });
-    }
-
-    const parts: GeminiContent["parts"] = [{ text: prompt }];
-
-    for (const image of images) {
-      parts.push({
-        inlineData: {
-          mimeType: image.mimeType,
-          data: extractBase64Data(image.base64),
-        },
-      });
-    }
-
-    const contents: GeminiContent[] = [{ parts, role: "user" }];
-
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[GeminiClient] generateWithImages() → calling generateContent()");
-    }
-
-    return this.generateContent(model, contents, config);
-  }
 }
 
 export const geminiTextGenerationService = new GeminiTextGenerationService();

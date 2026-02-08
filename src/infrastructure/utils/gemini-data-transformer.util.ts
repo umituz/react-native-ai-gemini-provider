@@ -5,16 +5,6 @@
 
 import type { GeminiResponse } from "../../domain/entities";
 
-/**
- * Extract base64 data from data URL or return as-is
- */
-export function extractBase64Data(base64String: string): string {
-  if (!base64String.includes(",")) {
-    return base64String;
-  }
-  const parts = base64String.split(",");
-  return parts[1] ?? parts[0] ?? base64String;
-}
 
 /**
  * Extract text from Gemini response

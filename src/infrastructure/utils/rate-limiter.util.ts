@@ -3,8 +3,6 @@
  * Prevents API rate limit errors by controlling request frequency
  */
 
-declare const __DEV__: boolean;
-
 export interface RateLimiterOptions {
   minInterval?: number; // Minimum milliseconds between requests
   maxQueueSize?: number; // Maximum number of pending requests
@@ -36,7 +34,7 @@ export class RateLimiter {
           reject(error);
         }
       });
-      this.processQueue();
+      void this.processQueue();
     });
   }
 

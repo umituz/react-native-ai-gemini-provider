@@ -19,10 +19,9 @@ export interface UseGeminiOptions {
 
 export interface UseGeminiReturn {
   generate: (prompt: string) => Promise<void>;
-  generateWithImage: (prompt: string, imageBase64: string, mimeType: string) => Promise<void>;
   generateJSON: <T>(prompt: string, schema?: Record<string, unknown>) => Promise<T | null>;
   result: string | null;
-  jsonResult: unknown | null;
+  jsonResult: unknown;
   isGenerating: boolean;
   error: string | null;
   reset: () => void;
@@ -32,16 +31,10 @@ function cleanJsonResponse(text: string): string {
   return text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
 }
 
-function extractTextFromParts(parts: unknown[]): string {
-  return parts
-    .filter((p): p is { text: string } => typeof p === "object" && p !== null && "text" in p)
-    .map((p) => p.text)
-    .join("");
-}
 
 export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
   const [result, setResult] = useState<string | null>(null);
-  const [jsonResult, setJsonResult] = useState<unknown | null>(null);
+  const [jsonResult, setJsonResult] = useState<unknown>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef(false);
@@ -74,16 +67,6 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
     );
   }, [model, options.generationConfig, setters, callbacks, options.onSuccess]);
 
-  const generateWithImage = useCallback(async (prompt: string, imageBase64: string, mimeType: string) => {
-    await executeWithState(abortRef, setters, callbacks,
-      () => geminiTextGenerationService.generateWithImages(model, prompt, [{ base64: imageBase64, mimeType }], options.generationConfig),
-      (response) => {
-        const text = extractTextFromParts(response.candidates?.[0]?.content.parts ?? []);
-        setResult(text);
-        options.onSuccess?.(text);
-      }
-    );
-  }, [model, options.generationConfig, setters, callbacks, options.onSuccess]);
 
   const reset = useCallback(() => {
     abortRef.current = true;
@@ -97,5 +80,5 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
     return () => { abortRef.current = true; };
   }, []);
 
-  return { generate, generateWithImage, generateJSON, result, jsonResult, isGenerating, error, reset };
+  return { generate, generateJSON, result, jsonResult, isGenerating, error, reset };
 }

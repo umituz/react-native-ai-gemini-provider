@@ -7,7 +7,6 @@ import { JobManager } from "../job/JobManager";
 import type { JobSubmission, JobStatus } from "../job/JobManager";
 import { generationExecutor } from "./generation-executor";
 
-declare const __DEV__: boolean;
 
 export class JobProcessor {
   private jobManager = new JobManager();
@@ -15,10 +14,7 @@ export class JobProcessor {
   submitJob(model: string, input: Record<string, unknown>): Promise<JobSubmission> {
     const submission = this.jobManager.submitJob(model, input);
 
-    this.processJobAsync(submission.requestId).catch((error) => {
-      if (typeof __DEV__ !== "undefined" && __DEV__) {
-        console.error("[GeminiProvider] Job failed:", error);
-      }
+    this.processJobAsync(submission.requestId).catch(() => {
     });
 
     return Promise.resolve(submission);

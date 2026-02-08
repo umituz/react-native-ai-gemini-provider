@@ -3,7 +3,7 @@
  * Text-only AI provider for Google Gemini
  */
 
-import type { GeminiConfig, GeminiImageInput } from "../../domain/entities";
+import type { GeminiConfig } from "../../domain/entities";
 import { providerInitializer } from "./provider-initializer";
 import { generationExecutor } from "./generation-executor";
 
@@ -34,23 +34,6 @@ export class GeminiProvider {
    */
   async generateText(prompt: string, model: string): Promise<string> {
     return generationExecutor.executeTextGeneration(prompt, model);
-  }
-
-  /**
-   * Generate text with images (multimodal)
-   * Useful for "describe this image" scenarios
-   */
-  async generateTextWithImages(
-    prompt: string,
-    images: GeminiImageInput[],
-    model: string,
-  ): Promise<string> {
-    const result = await generationExecutor.generateWithImages(
-      model,
-      prompt,
-      images,
-    );
-    return result.text;
   }
 
   /**

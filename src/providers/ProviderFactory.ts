@@ -51,7 +51,6 @@ class ProviderFactory {
     // Initialize Gemini client with resolved config
     const geminiConfig: GeminiConfig = {
       apiKey: config.apiKey,
-      imageEditModel: config.imageEditModel,
       maxRetries: config.maxRetries,
       baseDelay: config.baseDelay,
       maxDelay: config.maxDelay,

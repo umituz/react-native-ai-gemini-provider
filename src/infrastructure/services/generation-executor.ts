@@ -3,11 +3,9 @@
  * Handles execution of text generation
  */
 
-import type { GeminiImageInput } from "../../domain/entities";
 import { geminiTextGenerationService } from "./gemini-text-generation.service";
 import { geminiStructuredTextService } from "./gemini-structured-text.service";
 
-declare const __DEV__: boolean;
 
 export interface ExecutionOptions {
   onProgress?: (progress: number) => void;
@@ -15,7 +13,6 @@ export interface ExecutionOptions {
 
 export interface GenerationInput {
   prompt?: string;
-  images?: GeminiImageInput[];
   generationConfig?: unknown;
 }
 
@@ -26,9 +23,6 @@ export class GenerationExecutor {
    * Execute text generation
    */
   async executeTextGeneration(prompt: string, model: string): Promise<string> {
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      console.log("[GenerationExecutor] executeTextGeneration() called", { model });
-    }
 
     const response = await geminiTextGenerationService.generateContent(
       model,
@@ -46,9 +40,6 @@ export class GenerationExecutor {
     schema: Record<string, unknown>,
     model: string,
   ): Promise<T> {
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      console.log("[GenerationExecutor] executeStructuredGeneration() called", { model });
-    }
 
     return geminiStructuredTextService.generateStructuredText<T>(
       model,
@@ -57,27 +48,6 @@ export class GenerationExecutor {
     );
   }
 
-  /**
-   * Generate text with images (multimodal)
-   */
-  async generateWithImages(
-    model: string,
-    prompt: string,
-    images: GeminiImageInput[],
-  ): Promise<{ text: string; response: unknown }> {
-    const response = await geminiTextGenerationService.generateWithImages(
-      model,
-      prompt,
-      images,
-    );
-
-    const text = response.candidates?.[0]?.content.parts
-      .filter((p): p is { text: string } => "text" in p)
-      .map((p) => p.text)
-      .join("") || "";
-
-    return { text, response };
-  }
 
   /**
    * Extract text from Gemini response

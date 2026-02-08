@@ -14,12 +14,6 @@ export interface GeminiConfig {
   defaultTimeoutMs?: number;
   /** Model used for text generation (default: gemini-2.5-flash-lite) */
   textModel?: string;
-  /** Model used for text-to-image generation (default: imagen-4.0-generate-001) */
-  textToImageModel?: string;
-  /** Model used for image editing/transformation (default: gemini-2.5-flash-image) */
-  imageEditModel?: string;
-  /** Model used for video generation (default: veo-3.1-fast-generate-preview) */
-  videoGenerationModel?: string;
 }
 
 export type GeminiGenerationConfig = Omit<GenerationConfig, "responseSchema"> & {
@@ -50,9 +44,7 @@ export interface GeminiContent {
 }
 
 export type GeminiPart =
-  | { text: string }
-  | { inlineData: { mimeType: string; data: string } }
-  | { fileData: { mimeType: string; fileUri: string } };
+  | { text: string };
 
 export interface GeminiRequest {
   contents: GeminiContent[];
@@ -108,26 +100,3 @@ export interface GeminiModel {
   supportedCapabilities?: string[];
 }
 
-/**
- * Result from image generation
- */
-export interface GeminiImageGenerationResult {
-  /** Generated text (story, caption, etc.) */
-  text?: string;
-  /** Data URL of the generated image (data:image/png;base64,...) */
-  imageUrl?: string;
-  /** Raw base64 image data */
-  imageBase64?: string;
-  /** MIME type of the generated image */
-  mimeType?: string;
-}
-
-/**
- * Input for image generation
- */
-export interface GeminiImageInput {
-  /** Base64 encoded image data (with or without data URL prefix) */
-  base64: string;
-  /** MIME type (e.g., "image/png", "image/jpeg") */
-  mimeType: string;
-}
