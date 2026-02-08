@@ -9,7 +9,6 @@ import type {
   GeminiGenerationConfig,
 } from "../../domain/entities";
 
-declare const __DEV__: boolean;
 
 class GeminiStructuredTextService {
   /**

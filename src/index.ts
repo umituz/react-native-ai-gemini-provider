@@ -31,7 +31,6 @@ export { GeminiErrorType, GeminiError, GEMINI_MODELS, DEFAULT_MODELS, MODEL_PRIC
 // Services
 export {
   geminiClientCoreService,
-  geminiRetryService,
   geminiTextGenerationService,
   geminiTextService,
   geminiStructuredTextService,
@@ -46,7 +45,6 @@ export type {
   GenerationInput,
   GenerationResult,
   ExecutionOptions,
-  RetryOptions,
 } from "./infrastructure/services";
 
 // Utils
@@ -102,7 +100,6 @@ export {
 } from "./providers";
 
 export type {
-  SubscriptionTier,
   QualityPreference,
   ProviderPreferences,
   ProviderConfigInput,

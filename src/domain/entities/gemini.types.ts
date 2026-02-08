@@ -8,9 +8,6 @@ import type { GenerationConfig } from "@google/generative-ai";
 export interface GeminiConfig {
   apiKey: string;
   baseUrl?: string;
-  maxRetries?: number;
-  baseDelay?: number;
-  maxDelay?: number;
   defaultTimeoutMs?: number;
   /** Model used for text generation (default: gemini-2.5-flash-lite) */
   textModel?: string;

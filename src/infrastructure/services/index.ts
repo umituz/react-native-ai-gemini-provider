@@ -5,7 +5,6 @@
 
 // Core services (low-level SDK wrappers)
 export { geminiClientCoreService } from "./gemini-client-core.service";
-export { geminiRetryService } from "./gemini-retry.service";
 export { geminiTextGenerationService } from "./gemini-text-generation.service";
 export { geminiTextService } from "./gemini-text-generation.service";
 export { geminiStructuredTextService } from "./gemini-structured-text.service";
@@ -32,5 +31,3 @@ export type {
   ExecutionOptions,
 } from "./generation-executor";
 
-// Retry service types
-export type { RetryOptions } from "./gemini-retry.service";

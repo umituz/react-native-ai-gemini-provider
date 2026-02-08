@@ -10,7 +10,6 @@ export {
 } from "./ProviderConfig";
 
 export type {
-  SubscriptionTier,
   QualityPreference,
   ProviderPreferences,
   ProviderConfigInput,

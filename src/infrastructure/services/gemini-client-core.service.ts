@@ -10,10 +10,6 @@ import type { GeminiConfig } from "../../domain/entities";
 declare const __DEV__: boolean;
 
 const DEFAULT_CONFIG: Partial<GeminiConfig> = {
-  maxRetries: 3,
-  baseDelay: 1000,
-  maxDelay: 10000,
-  defaultTimeoutMs: 60000,
   textModel: DEFAULT_MODELS.TEXT,
 };
 
@@ -47,7 +43,6 @@ class GeminiClientCoreService {
       // eslint-disable-next-line no-console
       console.log("[GeminiClient] initialized successfully", {
         textModel: this.config.textModel,
-        maxRetries: this.config.maxRetries,
       });
     }
   }

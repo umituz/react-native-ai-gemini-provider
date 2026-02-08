@@ -1,6 +1,6 @@
 /**
  * Provider Factory
- * Creates and configures AI provider instances with tier-based settings
+ * Creates and configures AI provider instances with simplified settings
  */
 
 import { geminiClientCoreService } from "../infrastructure/services/gemini-client-core.service";
@@ -15,11 +15,10 @@ import {
   getQualityOptimizedConfig,
 } from "./ProviderConfig";
 
-
 export type OptimizationStrategy = "cost" | "quality" | "balanced";
 
 export interface ProviderFactoryOptions extends ProviderConfigInput {
-  /** Optimization strategy (overrides tier defaults) */
+  /** Optimization strategy */
   strategy?: OptimizationStrategy;
 }
 
@@ -27,7 +26,7 @@ class ProviderFactory {
   private currentConfig: ResolvedProviderConfig | null = null;
 
   /**
-   * Initialize provider with tier-based configuration
+   * Initialize provider with configuration
    */
   initialize(options: ProviderFactoryOptions): void {
     let config: ResolvedProviderConfig;
@@ -51,9 +50,6 @@ class ProviderFactory {
     // Initialize Gemini client with resolved config
     const geminiConfig: GeminiConfig = {
       apiKey: config.apiKey,
-      maxRetries: config.maxRetries,
-      baseDelay: config.baseDelay,
-      maxDelay: config.maxDelay,
       defaultTimeoutMs: config.timeout,
       textModel: config.textModel,
     };
@@ -88,8 +84,6 @@ class ProviderFactory {
 
     const newInput: ProviderConfigInput = {
       apiKey: updates.apiKey || this.currentConfig.apiKey,
-      subscriptionTier:
-        updates.subscriptionTier || this.currentConfig.subscriptionTier,
       preferences: {
         ...updates.preferences,
       },

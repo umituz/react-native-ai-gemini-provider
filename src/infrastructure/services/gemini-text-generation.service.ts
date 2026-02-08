@@ -4,7 +4,6 @@
  */
 
 import { geminiClientCoreService } from "./gemini-client-core.service";
-import { geminiRetryService } from "./gemini-retry.service";
 import { extractTextFromResponse } from "../utils/gemini-data-transformer.util";
 import type {
   GeminiContent,
@@ -39,12 +38,10 @@ class GeminiTextGenerationService {
     }));
 
     try {
-      const result = await geminiRetryService.executeWithRetry(() =>
-        genModel.generateContent({
+      const result = await genModel.generateContent({
           contents: sdkContents as Parameters<typeof genModel.generateContent>[0] extends { contents: infer C } ? C : never,
           generationConfig,
-        }),
-      );
+        });
 
       const response = (result as { response: GeminiResponse }).response;
 
