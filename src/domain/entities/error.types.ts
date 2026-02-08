@@ -1,8 +1,3 @@
-/**
- * Gemini Error Types
- * Error classification for Gemini API
- */
-
 export enum GeminiErrorType {
   NETWORK = "NETWORK",
   RATE_LIMIT = "RATE_LIMIT",
@@ -38,9 +33,6 @@ export interface GeminiApiError {
   };
 }
 
-/**
- * Custom error class for Gemini API errors
- */
 export class GeminiError extends Error {
   readonly type: GeminiErrorType;
   readonly retryable: boolean;
@@ -61,23 +53,14 @@ export class GeminiError extends Error {
     }
   }
 
-  /**
-   * Check if error is retryable
-   */
   isRetryable(): boolean {
     return this.retryable;
   }
 
-  /**
-   * Get error type
-   */
   getErrorType(): GeminiErrorType {
     return this.type;
   }
 
-  /**
-   * Create GeminiError from unknown error
-   */
   static fromError(_error: unknown, info: GeminiErrorInfo): GeminiError {
     return new GeminiError(info);
   }

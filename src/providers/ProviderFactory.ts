@@ -1,7 +1,3 @@
-/**
- * Provider Factory
- * Creates and configures AI provider instances with simplified settings
- */
 
 import { geminiClientCoreService } from "../infrastructure/services/gemini-client-core.service";
 import type { GeminiConfig } from "../domain/entities";
@@ -9,17 +5,11 @@ import type {
   ProviderConfigInput,
   ResolvedProviderConfig,
 } from "./ProviderConfig";
-import {
-  resolveProviderConfig,
-  getCostOptimizedConfig,
-  getQualityOptimizedConfig,
-} from "./ProviderConfig";
-
-export type OptimizationStrategy = "cost" | "quality" | "balanced";
+import { resolveProviderConfig } from "./ProviderConfig";
 
 export interface ProviderFactoryOptions extends ProviderConfigInput {
-  /** Optimization strategy */
-  strategy?: OptimizationStrategy;
+  /** Quality preference strategy */
+  strategy?: "cost" | "quality";
 }
 
 class ProviderFactory {
@@ -29,20 +19,11 @@ class ProviderFactory {
    * Initialize provider with configuration
    */
   initialize(options: ProviderFactoryOptions): void {
-    let config: ResolvedProviderConfig;
+    const config = resolveProviderConfig(options);
 
-    // Apply optimization strategy
-    switch (options.strategy) {
-      case "cost":
-        config = getCostOptimizedConfig(options);
-        break;
-      case "quality":
-        config = getQualityOptimizedConfig(options);
-        break;
-      case "balanced":
-      default:
-        config = resolveProviderConfig(options);
-        break;
+    // Apply strategy-based adjustments
+    if (options.strategy === "quality") {
+      config.timeout = 60000; // Longer timeout for quality
     }
 
     this.currentConfig = config;
@@ -73,23 +54,29 @@ class ProviderFactory {
 
   /**
    * Update configuration without re-initializing
-   * Useful for switching models or adjusting settings
+   * Note: Changing apiKey requires full re-initialization
    */
   updateConfig(updates: Partial<ProviderConfigInput>): void {
     if (!this.currentConfig) {
-      throw new Error(
-        "Provider not initialized. Call initialize() first.",
-      );
+      throw new Error("Provider not initialized. Call initialize() first.");
     }
 
-    const newInput: ProviderConfigInput = {
-      apiKey: updates.apiKey || this.currentConfig.apiKey,
-      preferences: {
-        ...updates.preferences,
-      },
-    };
+    // If API key is changing, we need to re-initialize
+    if (updates.apiKey && updates.apiKey !== this.currentConfig.apiKey) {
+      const newInput: ProviderConfigInput = {
+        apiKey: updates.apiKey,
+        preferences: updates.preferences || {},
+      };
+      this.initialize(newInput);
+      return;
+    }
 
-    this.initialize(newInput);
+    // For other updates, merge with current config
+    this.currentConfig = {
+      ...this.currentConfig,
+      ...updates.preferences,
+      timeout: updates.preferences?.timeout ?? this.currentConfig.timeout,
+    };
   }
 }
 

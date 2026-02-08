@@ -1,7 +1,3 @@
-/**
- * Provider Configuration
- * Centralized configuration for AI provider with simplified settings
- */
 
 import { DEFAULT_MODELS } from "../domain/entities";
 
@@ -27,16 +23,10 @@ export interface ResolvedProviderConfig {
   timeout: number;
 }
 
-/**
- * Default configuration values
- */
 const DEFAULTS = {
   timeout: 30000,
 };
 
-/**
- * Resolve provider configuration based on preferences
- */
 export function resolveProviderConfig(
   input: ProviderConfigInput,
 ): ResolvedProviderConfig {
@@ -46,27 +36,5 @@ export function resolveProviderConfig(
     apiKey: input.apiKey,
     textModel: DEFAULT_MODELS.TEXT,
     timeout: preferences.timeout ?? DEFAULTS.timeout,
-  };
-}
-
-/**
- * Get cost-optimized config
- */
-export function getCostOptimizedConfig(
-  input: ProviderConfigInput,
-): ResolvedProviderConfig {
-  return resolveProviderConfig(input);
-}
-
-/**
- * Get quality-optimized config
- */
-export function getQualityOptimizedConfig(
-  input: ProviderConfigInput,
-): ResolvedProviderConfig {
-  const resolved = resolveProviderConfig(input);
-  return {
-    ...resolved,
-    timeout: 60000, // Longer timeout
   };
 }

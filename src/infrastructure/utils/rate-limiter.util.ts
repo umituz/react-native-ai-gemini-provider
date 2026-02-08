@@ -1,7 +1,3 @@
-/**
- * Rate Limiter
- * Prevents API rate limit errors by controlling request frequency
- */
 
 export interface RateLimiterOptions {
   minInterval?: number; // Minimum milliseconds between requests
@@ -14,6 +10,7 @@ export class RateLimiter {
   private lastRequest = 0;
   private minInterval: number;
   private maxQueueSize: number;
+  private processQueuePromise: Promise<void> | null = null;
 
   constructor(options: RateLimiterOptions = {}) {
     this.minInterval = options.minInterval ?? 100; // 100ms minimum interval
@@ -22,7 +19,7 @@ export class RateLimiter {
 
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (this.queue.length >= this.maxQueueSize) {
-      throw new Error("Rate limiter queue is full");
+      throw new Error(`Rate limiter queue is full (${this.maxQueueSize} requests pending). Please wait before retrying.`);
     }
 
     return new Promise((resolve, reject) => {
@@ -34,7 +31,16 @@ export class RateLimiter {
           reject(error);
         }
       });
-      void this.processQueue();
+
+      // Ensure queue processing is running (wait for it to avoid race condition)
+      if (!this.processQueuePromise) {
+        this.processQueuePromise = this.processQueue();
+        this.processQueuePromise.then(() => {
+          this.processQueuePromise = null;
+        }).catch(() => {
+          this.processQueuePromise = null;
+        });
+      }
     });
   }
 
@@ -72,5 +78,3 @@ export class RateLimiter {
     this.lastRequest = 0;
   }
 }
-
-export const rateLimiter = new RateLimiter();

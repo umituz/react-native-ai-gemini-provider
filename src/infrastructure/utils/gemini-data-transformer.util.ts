@@ -1,14 +1,7 @@
-/**
- * Gemini Data Transformer Utility
- * Handles data extraction and response parsing
- */
 
 import type { GeminiResponse } from "../../domain/entities";
 
 
-/**
- * Extract text from Gemini response
- */
 export function extractTextFromResponse(response: GeminiResponse): string {
   const candidate = response.candidates?.[0];
 
@@ -16,8 +9,18 @@ export function extractTextFromResponse(response: GeminiResponse): string {
     throw new Error("No response candidates");
   }
 
-  if (candidate.finishReason === "SAFETY") {
-    throw new Error("Content blocked by safety filters");
+  // Handle all finish reasons appropriately
+  switch (candidate.finishReason) {
+    case "SAFETY":
+      throw new Error("Content blocked by safety filters");
+    case "RECITATION":
+      throw new Error("Content blocked due to recitation concerns");
+    case "MAX_TOKENS":
+    case "FINISH_REASON_UNSPECIFIED":
+    case "OTHER":
+    case "STOP":
+      // Continue to extract text
+      break;
   }
 
   const textPart = candidate.content.parts.find(

@@ -1,7 +1,3 @@
-/**
- * Response Interceptors
- * Allows applications to modify responses after they're received
- */
 
 export interface ResponseContext<T = unknown> {
   model: string;
@@ -15,8 +11,11 @@ export type ResponseInterceptor<T = unknown> = (
   context: ResponseContext<T>,
 ) => ResponseContext<T> | Promise<ResponseContext<T>>;
 
+export type InterceptorErrorStrategy = "fail" | "skip" | "log";
+
 class ResponseInterceptors {
   private interceptors: Array<ResponseInterceptor<unknown>> = [];
+  private errorStrategy: InterceptorErrorStrategy = "fail";
 
   /**
    * Register a response interceptor
@@ -35,6 +34,13 @@ class ResponseInterceptors {
   }
 
   /**
+   * Set error handling strategy for interceptors
+   */
+  setErrorStrategy(strategy: InterceptorErrorStrategy): void {
+    this.errorStrategy = strategy;
+  }
+
+  /**
    * Apply all interceptors to a response context
    */
   async apply<T>(context: ResponseContext<T>): Promise<ResponseContext<T>> {
@@ -46,8 +52,16 @@ class ResponseInterceptors {
       try {
         result = await interceptor(result);
       } catch (error) {
-        // Interceptor error should fail the response processing
-        throw new Error(`Response interceptor failed: ${error instanceof Error ? error.message : String(error)}`);
+        switch (this.errorStrategy) {
+          case "fail":
+            throw new Error(`Response interceptor failed: ${error instanceof Error ? error.message : String(error)}`);
+          case "skip":
+            // Skip this interceptor and continue with previous result
+            break;
+          case "log":
+            // Silently ignore but continue
+            break;
+        }
       }
     }
 

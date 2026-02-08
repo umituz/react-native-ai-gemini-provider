@@ -1,7 +1,3 @@
-/**
- * Gemini Streaming Service
- * Handles streaming content generation
- */
 
 import { geminiClientCoreService } from "./gemini-client-core.service";
 import type {

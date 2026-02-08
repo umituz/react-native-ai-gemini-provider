@@ -1,13 +1,6 @@
-/**
- * Gemini Client Core Service
- * Handles client initialization, configuration, and validation
- */
-
 import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai";
-import { DEFAULT_MODELS } from "../../domain/entities";
+import { DEFAULT_MODELS, GEMINI_MODELS } from "../../domain/entities";
 import type { GeminiConfig } from "../../domain/entities";
-
-declare const __DEV__: boolean;
 
 const DEFAULT_CONFIG: Partial<GeminiConfig> = {
   textModel: DEFAULT_MODELS.TEXT,
@@ -20,31 +13,12 @@ class GeminiClientCoreService {
 
   initialize(config: GeminiConfig): void {
     if (this.initialized) {
-      if (typeof __DEV__ !== "undefined" && __DEV__) {
-        // eslint-disable-next-line no-console
-        console.log("[GeminiClient] Already initialized, skipping");
-      }
-      return;
-    }
-
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[GeminiClient] initialize() called", {
-        hasApiKey: !!config.apiKey,
-        textModel: config.textModel,
-      });
+      throw new Error("Gemini client already initialized. Call reset() before re-initializing with new config.");
     }
 
     this.client = new GoogleGenerativeAI(config.apiKey);
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.initialized = true;
-
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[GeminiClient] initialized successfully", {
-        textModel: this.config.textModel,
-      });
-    }
   }
 
   isInitialized(): boolean {
@@ -61,16 +35,35 @@ class GeminiClientCoreService {
 
   validateInitialization(): void {
     if (!this.client || !this.initialized) {
-      throw new Error(
-        "Gemini client not initialized. Call initialize() first.",
-      );
+      throw new Error("Gemini client not initialized. Call initialize() first.");
+    }
+  }
+
+  /**
+   * Validate model name against known models
+   */
+  private validateModel(modelName: string): void {
+    const knownModels = Object.values(GEMINI_MODELS.TEXT);
+    const isValid = knownModels.some((model) => model === modelName);
+
+    if (!isValid) {
+      throw new Error(`Unknown model: "${modelName}". Known models: ${knownModels.join(", ")}`);
     }
   }
 
   getModel(modelName?: string): GenerativeModel {
     this.validateInitialization();
+
+    if (!this.client) {
+      throw new Error("Gemini client not available");
+    }
+
     const effectiveModel = modelName || this.config?.textModel || DEFAULT_MODELS.TEXT;
-    return this.client!.getGenerativeModel({ model: effectiveModel });
+
+    // Validate model name
+    this.validateModel(effectiveModel);
+
+    return this.client.getGenerativeModel({ model: effectiveModel });
   }
 
   reset(): void {

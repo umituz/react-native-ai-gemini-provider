@@ -1,7 +1,3 @@
-/**
- * Request Interceptors
- * Allows applications to modify requests before they're sent
- */
 
 export interface RequestContext {
   model: string;
@@ -12,8 +8,11 @@ export interface RequestContext {
 
 export type RequestInterceptor = (context: RequestContext) => RequestContext | Promise<RequestContext>;
 
+export type InterceptorErrorStrategy = "fail" | "skip" | "log";
+
 class RequestInterceptors {
   private interceptors: RequestInterceptor[] = [];
+  private errorStrategy: InterceptorErrorStrategy = "fail";
 
   /**
    * Register a request interceptor
@@ -32,6 +31,13 @@ class RequestInterceptors {
   }
 
   /**
+   * Set error handling strategy for interceptors
+   */
+  setErrorStrategy(strategy: InterceptorErrorStrategy): void {
+    this.errorStrategy = strategy;
+  }
+
+  /**
    * Apply all interceptors to a request context
    */
   async apply(context: RequestContext): Promise<RequestContext> {
@@ -41,8 +47,16 @@ class RequestInterceptors {
       try {
         result = await interceptor(result);
       } catch (error) {
-        // Interceptor error should fail the request
-        throw new Error(`Request interceptor failed: ${error instanceof Error ? error.message : String(error)}`);
+        switch (this.errorStrategy) {
+          case "fail":
+            throw new Error(`Request interceptor failed: ${error instanceof Error ? error.message : String(error)}`);
+          case "skip":
+            // Skip this interceptor and continue with previous result
+            break;
+          case "log":
+            // Silently ignore but continue
+            break;
+        }
       }
     }
 

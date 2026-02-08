@@ -1,39 +1,37 @@
-/**
- * Gemini Provider
- * Text-only AI provider for Google Gemini
- */
 
 import type { GeminiConfig } from "../../domain/entities";
-import { providerInitializer } from "./provider-initializer";
-import { generationExecutor } from "./generation-executor";
+import { geminiClientCoreService } from "./gemini-client-core.service";
+import { geminiTextGenerationService } from "./gemini-text-generation.service";
+import { geminiStructuredTextService } from "./gemini-structured-text.service";
 
 export type GeminiProviderConfig = GeminiConfig;
 
-/**
- * Gemini Provider - Text Generation Only
- * For image/video generation, use FAL Provider instead
- */
 export class GeminiProvider {
   readonly providerId = "gemini";
   readonly providerName = "Google Gemini";
 
   initialize(config: GeminiProviderConfig): void {
-    providerInitializer.initialize(config);
+    if (geminiClientCoreService.isInitialized()) {
+      throw new Error("Provider already initialized. Call reset() before re-initializing with new config.");
+    }
+    geminiClientCoreService.initialize(config);
   }
 
   isInitialized(): boolean {
-    return providerInitializer.isInitialized();
+    return geminiClientCoreService.isInitialized();
   }
 
   reset(): void {
-    providerInitializer.reset();
+    geminiClientCoreService.reset();
   }
 
   /**
    * Generate text from prompt
    */
   async generateText(prompt: string, model: string): Promise<string> {
-    return generationExecutor.executeTextGeneration(prompt, model);
+    const contents = [{ parts: [{ text: prompt }], role: "user" as const }];
+    const response = await geminiTextGenerationService.generateContent(model, contents);
+    return this.extractTextFromResponse(response);
   }
 
   /**
@@ -44,7 +42,25 @@ export class GeminiProvider {
     schema: Record<string, unknown>,
     model: string,
   ): Promise<T> {
-    return generationExecutor.executeStructuredGeneration<T>(prompt, schema, model);
+    return geminiStructuredTextService.generateStructuredText<T>(model, prompt, schema);
+  }
+
+  /**
+   * Extract text from Gemini response
+   */
+  private extractTextFromResponse(response: unknown): string {
+    const resp = response as {
+      candidates?: Array<{
+        content: {
+          parts: Array<{ text?: string }>;
+        };
+      }>;
+    };
+
+    return resp.candidates?.[0]?.content.parts
+      .filter((p): p is { text: string } => "text" in p && typeof p.text === "string")
+      .map((p) => p.text)
+      .join("") || "";
   }
 }
 

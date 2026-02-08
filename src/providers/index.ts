@@ -1,13 +1,9 @@
 /**
  * Provider Configuration & Factory
- * Centralized configuration system for tier-based AI provider setup
+ * Centralized configuration system for AI provider setup
  */
 
-export {
-  resolveProviderConfig,
-  getCostOptimizedConfig,
-  getQualityOptimizedConfig,
-} from "./ProviderConfig";
+export { resolveProviderConfig } from "./ProviderConfig";
 
 export type {
   QualityPreference,
@@ -19,6 +15,5 @@ export type {
 export { providerFactory } from "./ProviderFactory";
 
 export type {
-  OptimizationStrategy,
   ProviderFactoryOptions,
 } from "./ProviderFactory";

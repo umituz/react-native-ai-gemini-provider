@@ -1,7 +1,3 @@
-/**
- * Gemini Text Generation Service
- * Handles text and multimodal content generation
- */
 
 import { geminiClientCoreService } from "./gemini-client-core.service";
 import { extractTextFromResponse } from "../utils/gemini-data-transformer.util";
@@ -11,8 +7,6 @@ import type {
   GeminiResponse,
   GeminiPart,
 } from "../../domain/entities";
-
-declare const __DEV__: boolean;
 
 class GeminiTextGenerationService {
   /**
@@ -25,60 +19,37 @@ class GeminiTextGenerationService {
   ): Promise<GeminiResponse> {
     const genModel = geminiClientCoreService.getModel(model);
 
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[Gemini] Generate content:", { model });
-    }
-
     const sdkContents = contents.map((content) => ({
       role: content.role || "user",
-      parts: content.parts.map((part) => {
-        return part;
-      }),
+      parts: content.parts,
     }));
 
-    try {
-      const result = await genModel.generateContent({
-          contents: sdkContents as Parameters<typeof genModel.generateContent>[0] extends { contents: infer C } ? C : never,
-          generationConfig,
-        });
+    const result = await genModel.generateContent({
+      contents: sdkContents as Parameters<typeof genModel.generateContent>[0] extends { contents: infer C } ? C : never,
+      generationConfig,
+    });
 
-      const response = (result as { response: GeminiResponse }).response;
+    const response = (result as { response: GeminiResponse }).response;
 
-      if (typeof __DEV__ !== "undefined" && __DEV__) {
-        // eslint-disable-next-line no-console
-        console.log("[Gemini] Content generated:", {
-          candidatesCount: response.candidates?.length ?? 0,
-          finishReason: response.candidates?.[0]?.finishReason,
-        });
-      }
+    return {
+      candidates: response.candidates?.map((candidate) => {
+        const transformedParts: GeminiPart[] = [];
+        for (const part of candidate.content.parts) {
+          if ("text" in part && typeof part.text === "string") {
+            transformedParts.push({ text: part.text });
+          }
+          // Ignore unsupported part types (inlineData, etc.)
+        }
 
-      return {
-        candidates: response.candidates?.map((candidate) => ({
+        return {
           content: {
-            parts: candidate.content.parts
-              .map((part): GeminiPart | null => {
-                if ("text" in part && part.text !== undefined) {
-                  return { text: part.text };
-                }
-                return null;
-              })
-              .filter((p): p is GeminiPart => p !== null),
+            parts: transformedParts,
             role: (candidate.content.role || "model"),
           },
           finishReason: candidate.finishReason,
-        })),
-      };
-    } catch (error) {
-      if (typeof __DEV__ !== "undefined" && __DEV__) {
-        // eslint-disable-next-line no-console
-        console.error("[Gemini] Content generation failed:", {
-          model,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-      throw error;
-    }
+        };
+      }),
+    };
   }
 
   /**
@@ -103,5 +74,3 @@ class GeminiTextGenerationService {
 }
 
 export const geminiTextGenerationService = new GeminiTextGenerationService();
-
-export const geminiTextService = geminiTextGenerationService;

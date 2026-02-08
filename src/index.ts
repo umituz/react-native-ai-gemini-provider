@@ -8,31 +8,25 @@
 export type {
   GeminiConfig,
   GeminiGenerationConfig,
-  GeminiSafetySettings,
   GeminiHarmCategory,
   GeminiHarmBlockThreshold,
   GeminiContent,
   GeminiPart,
-  GeminiRequest,
   GeminiResponse,
   GeminiCandidate,
   GeminiFinishReason,
   GeminiSafetyRating,
-  GeminiPromptFeedback,
   GeminiUsageMetadata,
-  GeminiModel,
   GeminiErrorInfo,
   GeminiApiError,
-  ResponseModality,
 } from "./domain/entities";
 
-export { GeminiErrorType, GeminiError, GEMINI_MODELS, DEFAULT_MODELS, MODEL_PRICING, RESPONSE_MODALITIES } from "./domain/entities";
+export { GeminiErrorType, GeminiError, GEMINI_MODELS, DEFAULT_MODELS, MODEL_PRICING } from "./domain/entities";
 
 // Services
 export {
   geminiClientCoreService,
   geminiTextGenerationService,
-  geminiTextService,
   geminiStructuredTextService,
   geminiStreamingService,
   geminiProviderService,
@@ -40,12 +34,7 @@ export {
   GeminiProvider,
 } from "./infrastructure/services";
 
-export type {
-  GeminiProviderConfig,
-  GenerationInput,
-  GenerationResult,
-  ExecutionOptions,
-} from "./infrastructure/services";
+export type { GeminiProviderConfig } from "./infrastructure/services";
 
 // Utils
 export {
@@ -58,10 +47,7 @@ export {
   debounce,
   throttle,
   PerformanceTimer,
-  PerformanceTracker,
-  performanceTracker,
   RateLimiter,
-  rateLimiter,
 } from "./infrastructure/utils";
 
 export type {
@@ -80,23 +66,22 @@ export type { TelemetryEvent, TelemetryListener } from "./infrastructure/telemet
 
 // Interceptors
 export { requestInterceptors, responseInterceptors } from "./infrastructure/interceptors";
+
 export type {
   RequestContext,
   RequestInterceptor,
+  InterceptorErrorStrategy,
+} from "./infrastructure/interceptors/RequestInterceptors";
+
+export type {
   ResponseContext,
   ResponseInterceptor,
-} from "./infrastructure/interceptors";
-
-// Cache
-export { SimpleCache, modelSelectionCache } from "./infrastructure/cache";
-export type { CacheOptions } from "./infrastructure/cache";
+} from "./infrastructure/interceptors/ResponseInterceptors";
 
 // Provider Config
 export {
   providerFactory,
   resolveProviderConfig,
-  getCostOptimizedConfig,
-  getQualityOptimizedConfig,
 } from "./providers";
 
 export type {
@@ -104,6 +89,5 @@ export type {
   ProviderPreferences,
   ProviderConfigInput,
   ResolvedProviderConfig,
-  OptimizationStrategy,
   ProviderFactoryOptions,
 } from "./providers";

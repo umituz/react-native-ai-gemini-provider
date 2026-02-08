@@ -1,9 +1,3 @@
-/**
- * Telemetry Hooks
- * Allows applications to monitor and log AI operations
- */
-
-declare const __DEV__: boolean;
 
 export interface TelemetryEvent {
   type: "request" | "response" | "error" | "retry";
@@ -18,18 +12,25 @@ export type TelemetryListener = (event: TelemetryEvent) => void;
 
 class TelemetryHooks {
   private listeners: TelemetryListener[] = [];
+  private failedListeners: Set<TelemetryListener> = new Set();
+  private readonly MAX_FAILURES = 3;
+  private listenerFailureCounts = new Map<TelemetryListener, number>();
 
   /**
    * Register a telemetry listener
    */
   subscribe(listener: TelemetryListener): () => void {
     this.listeners.push(listener);
+    this.failedListeners.delete(listener);
+    this.listenerFailureCounts.set(listener, 0);
 
     return () => {
       const index = this.listeners.indexOf(listener);
       if (index > -1) {
         this.listeners.splice(index, 1);
       }
+      this.failedListeners.delete(listener);
+      this.listenerFailureCounts.delete(listener);
     };
   }
 
@@ -38,13 +39,23 @@ class TelemetryHooks {
    */
   emit(event: TelemetryEvent): void {
     for (const listener of this.listeners) {
+      // Skip listeners that have failed too many times
+      if (this.failedListeners.has(listener)) {
+        continue;
+      }
+
       try {
         listener(event);
+        // Reset failure count on success
+        this.listenerFailureCounts.set(listener, 0);
       } catch (error) {
-        // Prevent telemetry errors from breaking the app
-        if (typeof __DEV__ !== "undefined" && __DEV__) {
-          // eslint-disable-next-line no-console
-          console.error("[Telemetry] Listener error:", error);
+        // Track failures
+        const failureCount = (this.listenerFailureCounts.get(listener) || 0) + 1;
+        this.listenerFailureCounts.set(listener, failureCount);
+
+        // If listener fails too many times, blacklist it
+        if (failureCount >= this.MAX_FAILURES) {
+          this.failedListeners.add(listener);
         }
       }
     }
@@ -112,6 +123,8 @@ class TelemetryHooks {
    */
   clear(): void {
     this.listeners = [];
+    this.failedListeners.clear();
+    this.listenerFailureCounts.clear();
   }
 
   /**

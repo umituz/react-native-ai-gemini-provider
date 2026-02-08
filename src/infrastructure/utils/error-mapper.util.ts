@@ -1,7 +1,3 @@
-/**
- * Gemini Error Mapper
- * Maps Gemini API errors to standardized format
- */
 
 import {
   GeminiErrorType,
@@ -76,7 +72,19 @@ function getStatusCode(error: unknown): number | undefined {
 
 function matchesPattern(message: string, patterns: string[]): boolean {
   const lower = message.toLowerCase();
-  return patterns.some((p) => lower.includes(p.toLowerCase()));
+
+  return patterns.some((pattern) => {
+    const lowerPattern = pattern.toLowerCase();
+
+    // Use word boundary matching for better accuracy
+    // This prevents "invalid" from matching "valid"
+    const words = lowerPattern.split(/\s+/);
+    return words.every((word) => {
+      // Check if the word appears as a whole word or with common punctuation
+      const regex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      return regex.test(lower) || lower.includes(word);
+    });
+  });
 }
 
 export function mapGeminiError(error: unknown): GeminiErrorInfo {
@@ -114,9 +122,6 @@ export function categorizeGeminiError(error: unknown): GeminiErrorType {
   return mapGeminiError(error).type;
 }
 
-/**
- * Create a GeminiError instance from an unknown error
- */
 export function createGeminiError(error: unknown): GeminiError {
   const errorInfo = mapGeminiError(error);
   return GeminiError.fromError(error, errorInfo);

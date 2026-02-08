@@ -1,9 +1,3 @@
-/**
- * Performance Utilities
- * Tools for measuring and optimizing performance
- */
-
-declare const __DEV__: boolean;
 
 export interface PerformanceMetrics {
   duration: number;
@@ -47,12 +41,8 @@ export async function measureAsync<T>(
   const timer = new PerformanceTimer(metadata);
   try {
     const result = await operation();
-    const duration = timer.stop();
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[Performance] Operation completed:", { duration: `${duration}ms`, metadata });
-    }
-    return { result, duration };
+    timer.stop();
+    return { result, duration: timer.duration };
   } catch (error) {
     timer.stop();
     throw error;
@@ -66,12 +56,8 @@ export function measureSync<T>(
   const timer = new PerformanceTimer(metadata);
   try {
     const result = operation();
-    const duration = timer.stop();
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      // eslint-disable-next-line no-console
-      console.log("[Performance] Operation completed:", { duration: `${duration}ms`, metadata });
-    }
-    return { result, duration };
+    timer.stop();
+    return { result, duration: timer.duration };
   } catch (error) {
     timer.stop();
     throw error;
@@ -106,40 +92,4 @@ export function throttle<T extends (...args: never[]) => unknown>(
     }
   };
 }
-
-export class PerformanceTracker {
-  private metrics = new Map<string, number[]>();
-
-  record(operation: string, duration: number): void {
-    if (!this.metrics.has(operation)) {
-      this.metrics.set(operation, []);
-    }
-    this.metrics.get(operation)!.push(duration);
-  }
-
-  getStats(operation: string): { count: number; avg: number; min: number; max: number } | null {
-    const durations = this.metrics.get(operation);
-    if (!durations || durations.length === 0) return null;
-    return {
-      count: durations.length,
-      avg: durations.reduce((a, b) => a + b, 0) / durations.length,
-      min: Math.min(...durations),
-      max: Math.max(...durations),
-    };
-  }
-
-  getAllStats(): Record<string, ReturnType<PerformanceTracker["getStats"]>> {
-    const stats: Record<string, ReturnType<PerformanceTracker["getStats"]>> = {};
-    for (const operation of this.metrics.keys()) {
-      stats[operation] = this.getStats(operation);
-    }
-    return stats;
-  }
-
-  clear(): void {
-    this.metrics.clear();
-  }
-}
-
-export const performanceTracker = new PerformanceTracker();
 

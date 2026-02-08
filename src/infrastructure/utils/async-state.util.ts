@@ -1,7 +1,3 @@
-/**
- * Async State Utility
- * Common async execution pattern with state management
- */
 
 export interface AsyncStateCallbacks {
   onSuccess?: (result: string) => void;
@@ -15,9 +11,6 @@ export interface AsyncStateSetters {
   setJsonResult: (value: unknown) => void;
 }
 
-/**
- * Execute an async operation with common state management
- */
 export async function executeWithState<T>(
   abortRef: React.MutableRefObject<boolean>,
   setters: AsyncStateSetters,

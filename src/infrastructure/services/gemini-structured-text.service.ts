@@ -1,9 +1,6 @@
-/**
- * Gemini Structured Text Service
- * Handles structured JSON response generation with schema validation
- */
 
 import { geminiTextGenerationService } from "./gemini-text-generation.service";
+import type { GenerationConfig } from "@google/generative-ai";
 import type {
   GeminiContent,
   GeminiGenerationConfig,
@@ -20,10 +17,16 @@ class GeminiStructuredTextService {
     schema: Record<string, unknown>,
     config?: Omit<GeminiGenerationConfig, "responseMimeType" | "responseSchema">,
   ): Promise<T> {
+    // Validate schema structure before passing to SDK
+    if (!schema || typeof schema !== "object" || Object.keys(schema).length === 0) {
+      throw new Error("Schema must be a non-empty object");
+    }
+
     const generationConfig: GeminiGenerationConfig = {
       ...config,
       responseMimeType: "application/json",
-      responseSchema: schema as unknown as undefined,
+      // Pass schema directly - Google SDK will validate it
+      responseSchema: schema as GenerationConfig["responseSchema"],
     };
 
     const contents: GeminiContent[] = [
