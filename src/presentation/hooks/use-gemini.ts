@@ -3,7 +3,8 @@ import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import type { GeminiGenerationConfig } from "../../domain/entities";
 import { DEFAULT_MODELS } from "../../domain/entities";
 import { geminiTextGenerationService, geminiStructuredTextService } from "../../infrastructure/services";
-import { executeWithState } from "../../infrastructure/utils/async-state.util";
+import { executeWithState, type AsyncStateSetters } from "../../infrastructure/utils/async";
+import { parseJsonResponse } from "../../infrastructure/utils/json-parser.util";
 
 export interface UseGeminiOptions {
   model?: string;
@@ -22,125 +23,150 @@ export interface UseGeminiReturn {
   reset: () => void;
 }
 
-function cleanJsonResponse(text: string): string {
-  return text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-}
-
-
 export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
   const [result, setResult] = useState<string | null>(null);
   const [jsonResult, setJsonResult] = useState<unknown>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Use a ref to store the abort controller for the current operation
   const abortControllerRef = useRef<AbortController | null>(null);
   const operationIdRef = useRef(0);
 
-  const setters = useMemo(() => ({ setIsGenerating, setError, setResult, setJsonResult }), []);
-  const callbacks = useMemo(() => ({ onSuccess: options.onSuccess, onError: options.onError }), [options.onSuccess, options.onError]);
+  const setters: AsyncStateSetters<string, unknown> = useMemo(
+    () => ({
+      setIsLoading: setIsGenerating,
+      setError,
+      setResult,
+      setSecondaryResult: setJsonResult,
+    }),
+    []
+  );
+
+  const callbacks = useMemo(
+    () => ({ onSuccess: options.onSuccess, onError: options.onError }),
+    [options.onSuccess, options.onError]
+  );
+
   const model = options.model ?? DEFAULT_MODELS.TEXT;
 
-  const generate = useCallback(async (prompt: string) => {
-    // Abort previous operation if still running
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create new abort controller for this operation
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    const currentOpId = ++operationIdRef.current;
-
-    try {
-      await executeWithState(
-        { current: false }, // We'll use operation ID instead
-        setters,
-        callbacks,
-        async () => {
-          // Check if this operation is still the latest one
-          if (currentOpId !== operationIdRef.current) {
-            controller.abort();
-            throw new Error("Operation cancelled by newer request");
-          }
-          return geminiTextGenerationService.generateText(model, prompt, options.generationConfig, controller.signal);
-        },
-        (text: string) => {
-          // Only update if this is still the latest operation
-          if (currentOpId === operationIdRef.current) {
-            setResult(text);
-            options.onSuccess?.(text);
-          }
-        }
-      );
-    } finally {
-      // Clean up abort controller if this was the latest operation
-      if (currentOpId === operationIdRef.current) {
-        abortControllerRef.current = null;
+  const generate = useCallback(
+    async (prompt: string) => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
-    }
-  }, [model, options.generationConfig, setters, callbacks, options.onSuccess]);
 
-  const generateJSON = useCallback(async <T>(prompt: string, schema?: Record<string, unknown>): Promise<T | null> => {
-    // Abort previous operation if still running
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      const currentOpId = ++operationIdRef.current;
 
-    // Create new abort controller for this operation
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    const currentOpId = ++operationIdRef.current;
-
-    try {
-      return await executeWithState(
-        { current: false }, // We'll use operation ID instead
-        setters,
-        callbacks,
-        async () => {
-          // Check if this operation is still the latest one
-          if (currentOpId !== operationIdRef.current) {
-            controller.abort();
-            throw new Error("Operation cancelled by newer request");
+      try {
+        await executeWithState(
+          setters,
+          callbacks,
+          async () => {
+            if (currentOpId !== operationIdRef.current) {
+              controller.abort();
+              throw new Error("Operation cancelled by newer request");
+            }
+            return geminiTextGenerationService.generateText(
+              model,
+              prompt,
+              options.generationConfig,
+              controller.signal
+            );
+          },
+          (text: string) => {
+            if (currentOpId === operationIdRef.current) {
+              setResult(text);
+              options.onSuccess?.(text);
+            }
           }
-
-          if (schema) {
-            return geminiStructuredTextService.generateStructuredText<T>(model, prompt, schema, options.generationConfig, controller.signal);
-          }
-
-          const text = await geminiTextGenerationService.generateText(model, prompt, { ...options.generationConfig, responseMimeType: "application/json" }, controller.signal);
-          const cleanedText = cleanJsonResponse(text);
-
-          try {
-            return JSON.parse(cleanedText) as T;
-          } catch (parseError) {
-            throw new Error(`Failed to parse JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}. Response: ${cleanedText.substring(0, 200)}...`);
-          }
-        },
-        (parsed: unknown) => {
-          // Only update if this is still the latest operation
-          if (currentOpId === operationIdRef.current) {
-            setJsonResult(parsed);
-            setResult(JSON.stringify(parsed, null, 2));
-            options.onSuccess?.(JSON.stringify(parsed));
-          }
+        );
+      } finally {
+        if (currentOpId === operationIdRef.current) {
+          abortControllerRef.current = null;
         }
-      );
-    } finally {
-      // Clean up abort controller if this was the latest operation
-      if (currentOpId === operationIdRef.current) {
-        abortControllerRef.current = null;
       }
-    }
-  }, [model, options.generationConfig, setters, callbacks, options.onSuccess]);
+    },
+    [model, options.generationConfig, setters, callbacks, options.onSuccess]
+  );
 
+  const generateJSON = useCallback(
+    async <T>(prompt: string, schema?: Record<string, unknown>): Promise<T | null> => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      const currentOpId = ++operationIdRef.current;
+
+      try {
+        // Create separate setters for JSON generation with proper types
+        const jsonSetters: AsyncStateSetters<unknown, unknown> = {
+          setIsLoading: setIsGenerating,
+          setError,
+          setResult: setJsonResult,
+          setSecondaryResult: (value) => setResult(typeof value === "string" ? value : JSON.stringify(value)),
+        };
+
+        const jsonCallbacks = {
+          onSuccess: options.onSuccess
+            ? (result: unknown) => options.onSuccess?.(JSON.stringify(result))
+            : undefined,
+          onError: options.onError,
+        };
+
+        const operationResult = await executeWithState<unknown>(
+          jsonSetters,
+          jsonCallbacks,
+          async () => {
+            if (currentOpId !== operationIdRef.current) {
+              controller.abort();
+              throw new Error("Operation cancelled by newer request");
+            }
+
+            if (schema) {
+              return geminiStructuredTextService.generateStructuredText<T>(
+                model,
+                prompt,
+                schema,
+                options.generationConfig,
+                controller.signal
+              );
+            }
+
+            const text = await geminiTextGenerationService.generateText(
+              model,
+              prompt,
+              { ...options.generationConfig, responseMimeType: "application/json" },
+              controller.signal
+            );
+
+            return parseJsonResponse<T>(text);
+          },
+          (parsed: unknown) => {
+            if (currentOpId === operationIdRef.current) {
+              setJsonResult(parsed);
+              setResult(JSON.stringify(parsed, null, 2));
+            }
+          }
+        );
+
+        return operationResult as T | null;
+      } finally {
+        if (currentOpId === operationIdRef.current) {
+          abortControllerRef.current = null;
+        }
+      }
+    },
+    [model, options.generationConfig, callbacks, options.onSuccess]
+  );
 
   const reset = useCallback(() => {
-    // Abort any ongoing operation
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    // Increment operation ID to cancel any pending operations
     operationIdRef.current++;
 
     setResult(null);
@@ -151,7 +177,6 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
 
   useEffect(() => {
     return () => {
-      // Cleanup on unmount
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }

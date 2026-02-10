@@ -1,18 +1,21 @@
 
 import { geminiClientCoreService } from "./gemini-client-core.service";
 import { extractTextFromResponse } from "../utils/gemini-data-transformer.util";
+import { toSdkContent, transformResponse, createTextContent } from "../utils/content-mapper.util";
+import { validatePrompt } from "../utils/validation.util";
+import { createGeminiError } from "../utils/error-mapper.util";
 import type {
   GeminiContent,
   GeminiGenerationConfig,
   GeminiResponse,
-  GeminiPart,
-  GeminiFinishReason,
-  GeminiSafetyRating,
 } from "../../domain/entities";
 
 class GeminiTextGenerationService {
   /**
    * Generate content (text, with optional images)
+   *
+   * @throws {GeminiError} For API-specific errors
+   * @throws {Error} For validation or network errors
    */
   async generateContent(
     model: string,
@@ -20,70 +23,57 @@ class GeminiTextGenerationService {
     generationConfig?: GeminiGenerationConfig,
     signal?: AbortSignal,
   ): Promise<GeminiResponse> {
-    const genModel = geminiClientCoreService.getModel(model);
-
-    const sdkContents = contents.map((content) => ({
-      role: content.role || "user",
-      parts: content.parts,
-    }));
-
-    const requestOptions = {
-      contents: sdkContents as Parameters<typeof genModel.generateContent>[0] extends { contents: infer C } ? C : never,
-      generationConfig,
-    };
-
-    const result = signal
-      ? await genModel.generateContent(requestOptions, { signal })
-      : await genModel.generateContent(requestOptions);
-
-    const response = result.response;
-
-    if (!response) {
-      throw new Error("No response received from Gemini API");
+    // Validate input
+    if (!contents || contents.length === 0) {
+      throw new Error("Contents array cannot be empty");
     }
 
-    return {
-      candidates: response.candidates?.map((candidate) => {
-        const transformedParts: GeminiPart[] = [];
-        for (const part of candidate.content.parts) {
-          if ("text" in part && typeof part.text === "string") {
-            transformedParts.push({ text: part.text });
-          }
-          // Ignore unsupported part types (inlineData, etc.)
-        }
+    // Check for early abort
+    if (signal?.aborted) {
+      throw new Error("Request was aborted");
+    }
 
-        // Map SDK finish reason to our domain type
-        const finishReason: GeminiFinishReason | undefined = candidate.finishReason
-          ? (candidate.finishReason as GeminiFinishReason)
-          : undefined;
+    try {
+      const genModel = geminiClientCoreService.getModel(model);
+      const sdkContents = toSdkContent(contents);
 
-        // Map safety ratings
-        const safetyRatings: GeminiSafetyRating[] | undefined = candidate.safetyRatings
-          ? candidate.safetyRatings.map((rating) => ({
-              category: rating.category as GeminiSafetyRating["category"],
-              probability: rating.probability as GeminiSafetyRating["probability"],
-            }))
-          : undefined;
+      const requestOptions = {
+        contents: sdkContents as Parameters<typeof genModel.generateContent>[0] extends { contents: infer C } ? C : never,
+        generationConfig,
+      };
 
-        return {
-          content: {
-            parts: transformedParts,
-            role: (candidate.content.role || "model") as "user" | "model",
-          },
-          finishReason,
-          safetyRatings,
-        };
-      }),
-      usageMetadata: response.usageMetadata ? {
-        promptTokenCount: response.usageMetadata.promptTokenCount,
-        candidatesTokenCount: response.usageMetadata.candidatesTokenCount,
-        totalTokenCount: response.usageMetadata.totalTokenCount,
-      } : undefined,
-    };
+      const result = signal
+        ? await genModel.generateContent(requestOptions, { signal })
+        : await genModel.generateContent(requestOptions);
+
+      const response = result.response;
+
+      if (!response) {
+        throw new Error("No response received from Gemini API");
+      }
+
+      return transformResponse(response);
+    } catch (error) {
+      // Re-throw as GeminiError if it's an API error
+      if (error instanceof Error && error.name === "GeminiError") {
+        throw error;
+      }
+
+      // Check for abort error
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Request was aborted");
+      }
+
+      // Wrap other errors
+      throw createGeminiError(error);
+    }
   }
 
   /**
    * Generate text from prompt
+   *
+   * @throws {GeminiError} For API-specific errors
+   * @throws {Error} For validation or network errors
    */
   async generateText(
     model: string,
@@ -91,9 +81,10 @@ class GeminiTextGenerationService {
     config?: GeminiGenerationConfig,
     signal?: AbortSignal,
   ): Promise<string> {
-    const contents: GeminiContent[] = [
-      { parts: [{ text: prompt }], role: "user" },
-    ];
+    // Validate prompt
+    validatePrompt(prompt);
+
+    const contents: GeminiContent[] = [createTextContent(prompt, "user")];
 
     const response = await this.generateContent(model, contents, config, signal);
     return extractTextFromResponse(response);

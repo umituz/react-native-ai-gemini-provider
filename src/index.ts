@@ -37,22 +37,70 @@ export type { GeminiProviderConfig } from "./infrastructure/services";
 
 // Utils
 export {
+  // Error handling
   mapGeminiError,
   isGeminiErrorRetryable,
   categorizeGeminiError,
   createGeminiError,
+  // Data transformation
   extractTextFromResponse,
+  cleanJsonText,
+  parseJsonResponse,
+  safeParseJson,
+  extractJsonFromText,
+  toSdkContent,
+  createTextContent,
+  transformCandidate,
+  transformResponse,
+  extractTextFromParts,
+  // Performance
   measureAsync,
   measureSync,
   debounce,
   throttle,
   PerformanceTimer,
+  // Rate limiting
   RateLimiter,
+  // Retry logic
+  retryWithBackoff,
+  retryIf,
+  retryWithFixedDelay,
+  shouldRetryNetworkError,
+  createRetryPredicate,
+  // Validation
+  validateModelName,
+  validateApiKey,
+  validateSchema,
+  validatePrompt,
+  validateTimeout,
+  isValidObject,
+  validateRequiredFields,
+  // Environment
+  getRequiredEnv,
+  getOptionalEnv,
+  getEnvNumber,
+  getEnvBoolean,
+  loadGeminiEnv,
+  getApiKeyFromEnv,
+  isDevelopment,
+  isDebugEnabled,
+  validateEnv,
+  getGeminiConfigFromEnv,
+  // Async state management
+  executeWithState,
+  createDebouncedAsync,
+  createMemoizedAsync,
 } from "./infrastructure/utils";
 
 export type {
   PerformanceMetrics,
   RateLimiterOptions,
+  RetryOptions,
+  RetryResult,
+  EnvConfig,
+  AsyncStateCallbacks,
+  AsyncStateSetters,
+  AsyncStateConfig,
 } from "./infrastructure/utils";
 
 // Hooks

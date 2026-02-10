@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai";
 import { DEFAULT_MODELS } from "../../domain/entities";
 import type { GeminiConfig } from "../../domain/entities";
+import { validateModelName, validateApiKey } from "../utils/validation.util";
 
 const DEFAULT_CONFIG: Partial<GeminiConfig> = {
   textModel: DEFAULT_MODELS.TEXT,
@@ -11,10 +12,18 @@ class GeminiClientCoreService {
   private config: GeminiConfig | null = null;
   private initialized = false;
 
+  /**
+   * Initialize the Gemini client with configuration
+   *
+   * @throws {Error} If already initialized or API key is invalid
+   */
   initialize(config: GeminiConfig): void {
     if (this.initialized) {
       throw new Error("Gemini client already initialized. Call reset() before re-initializing with new config.");
     }
+
+    // Validate API key
+    validateApiKey(config.apiKey);
 
     this.client = new GoogleGenerativeAI(config.apiKey);
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -39,19 +48,6 @@ class GeminiClientCoreService {
     }
   }
 
-  /**
-   * Validate model name format (allows any valid model string)
-   */
-  private validateModel(modelName: string): void {
-    if (!modelName || typeof modelName !== "string" || modelName.trim().length === 0) {
-      throw new Error(`Invalid model name: "${modelName}". Model name must be a non-empty string.`);
-    }
-
-    // Check for valid model format (starts with gemini-)
-    if (!modelName.startsWith("gemini-")) {
-      throw new Error(`Invalid model name: "${modelName}". Gemini models should start with "gemini-".`);
-    }
-  }
 
   getModel(modelName?: string): GenerativeModel {
     this.validateInitialization();
@@ -62,8 +58,8 @@ class GeminiClientCoreService {
 
     const effectiveModel = modelName || this.config?.textModel || DEFAULT_MODELS.TEXT;
 
-    // Validate model name format (not against hardcoded list)
-    this.validateModel(effectiveModel);
+    // Validate model name format
+    validateModelName(effectiveModel);
 
     return this.client.getGenerativeModel({ model: effectiveModel });
   }

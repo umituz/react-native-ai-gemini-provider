@@ -21,6 +21,7 @@ class TelemetryHooks {
    */
   subscribe(listener: TelemetryListener): () => void {
     this.listeners.push(listener);
+    // Remove from failed listeners on new subscription (in case it's being re-added)
     this.failedListeners.delete(listener);
     this.listenerFailureCounts.set(listener, 0);
 
@@ -29,6 +30,7 @@ class TelemetryHooks {
       if (index > -1) {
         this.listeners.splice(index, 1);
       }
+      // Clean up failure tracking when listener is removed
       this.failedListeners.delete(listener);
       this.listenerFailureCounts.delete(listener);
     };
@@ -46,8 +48,12 @@ class TelemetryHooks {
 
       try {
         listener(event);
-        // Reset failure count on success
-        this.listenerFailureCounts.set(listener, 0);
+        // Reset failure count and remove from failed listeners on success
+        const previousFailures = this.listenerFailureCounts.get(listener) || 0;
+        if (previousFailures > 0) {
+          this.listenerFailureCounts.set(listener, 0);
+          this.failedListeners.delete(listener);
+        }
       } catch (error) {
         // Track failures
         const failureCount = (this.listenerFailureCounts.get(listener) || 0) + 1;
@@ -126,6 +132,7 @@ class TelemetryHooks {
     if (index > -1) {
       this.listeners.splice(index, 1);
     }
+    // Clean up failure tracking
     this.failedListeners.delete(listener);
     this.listenerFailureCounts.delete(listener);
   }
