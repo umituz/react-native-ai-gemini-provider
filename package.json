@@ -1,6 +1,6 @@
 {
   "name": "@umituz/react-native-ai-gemini-provider",
-  "version": "2.0.31",
+  "version": "2.0.32",
   "description": "Google Gemini AI text generation provider for React Native applications",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
