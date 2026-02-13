@@ -9,7 +9,43 @@ import type {
   GeminiFinishReason,
   GeminiSafetyRating,
   GeminiResponse,
+  GeminiHarmCategory,
 } from "../../domain/entities";
+
+const VALID_FINISH_REASONS: readonly string[] = [
+  "FINISH_REASON_UNSPECIFIED",
+  "STOP",
+  "MAX_TOKENS",
+  "SAFETY",
+  "RECITATION",
+  "OTHER",
+] as const;
+
+const VALID_HARM_CATEGORIES: readonly string[] = [
+  "HARM_CATEGORY_HARASSMENT",
+  "HARM_CATEGORY_HATE_SPEECH",
+  "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+  "HARM_CATEGORY_DANGEROUS_CONTENT",
+] as const;
+
+const VALID_PROBABILITIES: readonly string[] = [
+  "NEGLIGIBLE",
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+] as const;
+
+function isValidFinishReason(value: string): value is GeminiFinishReason {
+  return VALID_FINISH_REASONS.includes(value);
+}
+
+function isValidHarmCategory(value: string): value is GeminiHarmCategory {
+  return VALID_HARM_CATEGORIES.includes(value);
+}
+
+function isValidProbability(value: string): value is GeminiSafetyRating["probability"] {
+  return VALID_PROBABILITIES.includes(value);
+}
 
 /**
  * Convert domain content to SDK format
@@ -62,21 +98,28 @@ export function transformCandidate(
     }
   }
 
-  const finishReason: GeminiFinishReason | undefined = candidate.finishReason
-    ? (candidate.finishReason as GeminiFinishReason)
-    : undefined;
+  const finishReason: GeminiFinishReason | undefined =
+    candidate.finishReason && isValidFinishReason(candidate.finishReason)
+      ? candidate.finishReason
+      : undefined;
 
   const safetyRatings: GeminiSafetyRating[] | undefined = candidate.safetyRatings
-    ? candidate.safetyRatings.map((rating) => ({
-        category: rating.category as GeminiSafetyRating["category"],
-        probability: rating.probability as GeminiSafetyRating["probability"],
-      }))
+    ? candidate.safetyRatings
+        .filter((rating) => isValidHarmCategory(rating.category) && isValidProbability(rating.probability))
+        .map((rating) => ({
+          category: rating.category as GeminiHarmCategory,
+          probability: rating.probability as GeminiSafetyRating["probability"],
+        }))
     : undefined;
+
+  const role = candidate.content.role === "user" || candidate.content.role === "model"
+    ? candidate.content.role
+    : "model";
 
   return {
     content: {
       parts: transformedParts,
-      role: (candidate.content.role || "model") as "user" | "model",
+      role,
     },
     finishReason,
     safetyRatings,

@@ -71,12 +71,18 @@ export function measureSync<T>(
   }
 }
 
+interface DebouncedFunction<T extends (...args: never[]) => unknown> {
+  (...args: Parameters<T>): void;
+  cancel: () => void;
+}
+
 export function debounce<T extends (...args: never[]) => unknown>(
   func: T,
   wait: number,
-): (...args: Parameters<T>) => void {
+): DebouncedFunction<T> {
   let timeout: ReturnType<typeof setTimeout> | undefined;
-  return (...args: Parameters<T>) => {
+
+  const debounced = (...args: Parameters<T>) => {
     const later = () => {
       timeout = undefined;
       func(...args);
@@ -86,19 +92,48 @@ export function debounce<T extends (...args: never[]) => unknown>(
     }
     timeout = setTimeout(later, wait);
   };
+
+  debounced.cancel = () => {
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = undefined;
+    }
+  };
+
+  return debounced;
+}
+
+interface ThrottledFunction<T extends (...args: never[]) => unknown> {
+  (...args: Parameters<T>): void;
+  cancel: () => void;
 }
 
 export function throttle<T extends (...args: never[]) => unknown>(
   func: T,
   limit: number,
-): (...args: Parameters<T>) => void {
-  let inThrottle: boolean;
-  return (...args: Parameters<T>) => {
+): ThrottledFunction<T> {
+  let inThrottle = false;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+
+  const throttled = (...args: Parameters<T>) => {
     if (!inThrottle) {
       func(...args);
       inThrottle = true;
-      setTimeout(() => (inThrottle = false), limit);
+      timeout = setTimeout(() => {
+        inThrottle = false;
+        timeout = undefined;
+      }, limit);
     }
   };
+
+  throttled.cancel = () => {
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = undefined;
+      inThrottle = false;
+    }
+  };
+
+  return throttled;
 }
 
