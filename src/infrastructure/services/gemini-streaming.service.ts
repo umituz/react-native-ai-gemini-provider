@@ -1,14 +1,12 @@
-
-import { geminiClientCoreService } from "./gemini-client-core.service";
-import { toSdkContent } from "../utils/content-mapper.util";
-import { createGeminiError } from "../utils/error-mapper.util";
+import { BaseGeminiService } from "./base-gemini.service";
 import { telemetryHooks } from "../telemetry";
+import { processStream } from "../utils/stream-processor.util";
 import type {
   GeminiContent,
   GeminiGenerationConfig,
 } from "../../domain/entities";
 
-class GeminiStreamingService {
+class GeminiStreamingService extends BaseGeminiService {
   /**
    * Stream content generation
    *
@@ -31,75 +29,47 @@ class GeminiStreamingService {
     generationConfig?: GeminiGenerationConfig,
     signal?: AbortSignal,
   ): Promise<string> {
-    // Validate input
-    if (!contents || contents.length === 0) {
-      throw new Error("Contents array cannot be empty");
-    }
-
+    // Validate callback
     if (typeof onChunk !== "function") {
       throw new Error("onChunk must be a function");
     }
 
-    // Check for early abort
-    if (signal?.aborted) {
-      throw new Error("Stream generation was aborted");
-    }
-
     try {
-      const genModel = geminiClientCoreService.getModel(model);
-      const sdkContents = toSdkContent(contents);
-
-      const requestOptions = {
-        contents: sdkContents as Parameters<typeof genModel.generateContentStream>[0] extends { contents: infer C } ? C : never,
+      const { genModel, sdkContents } = this.validateAndPrepare({
+        model,
+        contents,
         generationConfig,
-      };
+        signal,
+      });
+
+      const requestOptions = this.createRequestOptions(sdkContents, generationConfig);
 
       const result = signal
         ? await genModel.generateContentStream(requestOptions, { signal })
         : await genModel.generateContentStream(requestOptions);
 
-      let fullText = "";
-
-      for await (const chunk of result.stream) {
-        try {
-          const chunkText = chunk.text();
-          if (chunkText) {
-            fullText += chunkText;
-            // Safely call onChunk - errors in callback won't break the stream
-            try {
-              onChunk(chunkText);
-            } catch (callbackError) {
-              try {
-                telemetryHooks.logError(model, callbackError instanceof Error ? callbackError : new Error(String(callbackError)), "stream-callback");
-              } catch {
-                // Silently ignore telemetry errors to prevent breaking the stream
-              }
-            }
-          }
-        } catch (chunkError) {
-          // Log chunk error via telemetry, but don't let telemetry errors break the stream
-          try {
-            telemetryHooks.logError(model, chunkError instanceof Error ? chunkError : new Error(String(chunkError)), "stream-chunk");
-          } catch {
-            // Silently ignore telemetry errors
-          }
-        }
-      }
-
-      return fullText;
+      return await processStream(
+        result.stream,
+        onChunk,
+        (error, context) => this.logStreamError(model, error, context)
+      );
     } catch (error) {
-      // Re-throw as GeminiError if it's an API error
-      if (error instanceof Error && error.name === "GeminiError") {
-        throw error;
-      }
+      return this.handleError(error, "Stream generation was aborted");
+    }
+  }
 
-      // Check for abort error
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error("Stream generation was aborted");
-      }
-
-      // Wrap other errors
-      throw createGeminiError(error);
+  /**
+   * Log stream errors via telemetry
+   */
+  private logStreamError(model: string, error: unknown, context?: string): void {
+    try {
+      telemetryHooks.logError(
+        model,
+        error instanceof Error ? error : new Error(String(error)),
+        context
+      );
+    } catch {
+      // Silently ignore telemetry errors
     }
   }
 }

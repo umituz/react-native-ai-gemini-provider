@@ -1,18 +1,12 @@
 /**
- * Interceptors Module
- * Allows applications to modify requests and responses
+ * Interceptors Module - Internal Use Only
  */
 
+export { BaseInterceptor } from "./BaseInterceptor";
+export type { BaseContext, InterceptorErrorStrategy } from "./BaseInterceptor";
+
 export { requestInterceptors } from "./RequestInterceptors";
+export type { RequestContext, RequestInterceptor } from "./RequestInterceptors";
+
 export { responseInterceptors } from "./ResponseInterceptors";
-
-export type {
-  RequestContext,
-  RequestInterceptor,
-  InterceptorErrorStrategy,
-} from "./RequestInterceptors";
-
-export type {
-  ResponseContext,
-  ResponseInterceptor,
-} from "./ResponseInterceptors";
+export type { ResponseContext, ResponseInterceptor } from "./ResponseInterceptors";

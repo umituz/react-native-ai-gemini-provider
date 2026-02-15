@@ -1,49 +1,52 @@
-
 import { geminiClientCoreService } from "../infrastructure/services/gemini-client-core.service";
-import type { GeminiConfig } from "../domain/entities";
-import type {
-  ProviderConfigInput,
-  ResolvedProviderConfig,
-} from "./ProviderConfig";
-import { resolveProviderConfig } from "./ProviderConfig";
+import { ConfigBuilder, type ProviderConfig } from "./ConfigBuilder";
 
-export interface ProviderFactoryOptions extends ProviderConfigInput {
-  /** Provider strategy */
+// Re-export for public API
+export { ConfigBuilder } from "./ConfigBuilder";
+export type { ProviderConfig } from "./ConfigBuilder";
+
+export interface ProviderFactoryOptions {
+  apiKey: string;
+  timeout?: number;
+  textModel?: string;
   strategy?: "cost" | "quality";
 }
 
 class ProviderFactory {
-  private currentConfig: ResolvedProviderConfig | null = null;
-  private currentOptions: ProviderFactoryOptions | null = null;
+  private currentConfig: ProviderConfig | null = null;
+  private builder: ConfigBuilder | null = null;
 
   /**
    * Initialize provider with configuration
    */
   initialize(options: ProviderFactoryOptions): void {
-    const config = resolveProviderConfig(options);
+    // Build configuration using builder pattern
+    this.builder = ConfigBuilder.create()
+      .withApiKey(options.apiKey);
 
-    // Apply strategy-based adjustments
-    if (options.strategy === "quality") {
-      config.timeout = 60000; // Longer timeout for quality
+    if (options.strategy) {
+      this.builder.withStrategy(options.strategy);
     }
 
-    this.currentConfig = config;
-    this.currentOptions = options;
+    if (options.textModel) {
+      this.builder.withTextModel(options.textModel);
+    }
 
-    // Initialize Gemini client with resolved config
-    const geminiConfig: GeminiConfig = {
-      apiKey: config.apiKey,
-      defaultTimeoutMs: config.timeout,
-      textModel: config.textModel,
-    };
+    if (options.timeout) {
+      this.builder.withTimeout(options.timeout);
+    }
 
+    this.currentConfig = this.builder.build();
+
+    // Initialize Gemini client
+    const geminiConfig = this.builder.toGeminiConfig();
     geminiClientCoreService.initialize(geminiConfig);
   }
 
   /**
-   * Get current resolved configuration
+   * Get current configuration
    */
-  getConfig(): ResolvedProviderConfig | null {
+  getConfig(): ProviderConfig | null {
     return this.currentConfig;
   }
 
@@ -55,38 +58,23 @@ class ProviderFactory {
   }
 
   /**
-   * Update configuration without re-initializing
-   * Note: Changing apiKey requires full re-initialization
+   * Update configuration
+   * API key changes require re-initialization
    */
-  updateConfig(updates: Partial<ProviderConfigInput>): void {
-    if (!this.currentConfig || !this.currentOptions) {
+  updateConfig(updates: Partial<ProviderFactoryOptions>): void {
+    if (!this.currentConfig) {
       throw new Error("Provider not initialized. Call initialize() first.");
     }
 
-    // If API key is changing, we need to re-initialize
+    // If API key changes, re-initialize
     if (updates.apiKey && updates.apiKey !== this.currentConfig.apiKey) {
-      const newInput: ProviderFactoryOptions = {
-        apiKey: updates.apiKey,
-        preferences: updates.preferences || this.currentOptions.preferences,
-        strategy: this.currentOptions.strategy,
-      };
-      this.initialize(newInput);
+      this.initialize({ ...this.currentConfig, ...updates });
       return;
     }
 
-    // For other updates, merge with current config
-    const mergedPreferences = {
-      ...this.currentOptions.preferences,
-      ...updates.preferences,
-    };
-
-    this.currentOptions.preferences = mergedPreferences;
-
-    this.currentConfig = {
-      apiKey: this.currentConfig.apiKey,
-      textModel: this.currentConfig.textModel,
-      timeout: mergedPreferences.timeout ?? this.currentConfig.timeout,
-    };
+    // Otherwise, update using builder
+    this.builder = ConfigBuilder.from({ ...this.currentConfig, ...updates });
+    this.currentConfig = this.builder.build();
   }
 }
 

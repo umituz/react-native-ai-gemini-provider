@@ -1,46 +1,15 @@
+import { BaseInterceptor, type BaseContext } from "./BaseInterceptor";
 
-import { telemetryHooks } from "../telemetry";
-
-export interface RequestContext {
-  model: string;
-  feature?: string;
+export interface RequestContext extends BaseContext {
   payload: Record<string, unknown>;
-  timestamp: number;
 }
 
 export type RequestInterceptor = (context: RequestContext) => RequestContext | Promise<RequestContext>;
 
-export type InterceptorErrorStrategy = "fail" | "skip" | "log";
-
-class RequestInterceptors {
-  private interceptors: RequestInterceptor[] = [];
-  private errorStrategy: InterceptorErrorStrategy = "fail";
-
-  /**
-   * Register a request interceptor
-   * Interceptors are called in order (first registered = first called)
-   */
-  use(interceptor: RequestInterceptor): () => void {
-    this.interceptors.push(interceptor);
-
-    // Return unsubscribe function
-    return () => {
-      const index = this.interceptors.indexOf(interceptor);
-      if (index > -1) {
-        this.interceptors.splice(index, 1);
-      }
-    };
-  }
-
-  /**
-   * Set error handling strategy for interceptors
-   */
-  setErrorStrategy(strategy: InterceptorErrorStrategy): void {
-    this.errorStrategy = strategy;
-  }
-
+class RequestInterceptors extends BaseInterceptor<RequestContext> {
   /**
    * Apply all interceptors to a request context
+   * Interceptors are called in order (first registered = first called)
    */
   async apply(context: RequestContext): Promise<RequestContext> {
     let result = context;
@@ -49,37 +18,12 @@ class RequestInterceptors {
       try {
         result = await interceptor(result);
       } catch (error) {
-        // Log to telemetry
-        telemetryHooks.logError(context.model, error instanceof Error ? error : new Error(String(error)), context.feature);
-
-        switch (this.errorStrategy) {
-          case "fail":
-            throw new Error(`Request interceptor failed: ${error instanceof Error ? error.message : String(error)}`);
-          case "skip":
-            // Skip this interceptor and continue with previous result
-            break;
-          case "log":
-            // Error already logged, continue with previous result
-            break;
-        }
+        this.handleError(context, error);
+        // If we get here, strategy was "skip" or "log" - continue with previous result
       }
     }
 
     return result;
-  }
-
-  /**
-   * Clear all interceptors
-   */
-  clear(): void {
-    this.interceptors = [];
-  }
-
-  /**
-   * Get interceptor count
-   */
-  count(): number {
-    return this.interceptors.length;
   }
 }
 

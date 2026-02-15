@@ -1,18 +1,9 @@
 /**
- * Provider Configuration & Factory
- * Centralized configuration system for AI provider setup
+ * Provider Configuration & Factory - Public API
  */
 
-export { resolveProviderConfig } from "./ProviderConfig";
-
-export type {
-  ProviderPreferences,
-  ProviderConfigInput,
-  ResolvedProviderConfig,
-} from "./ProviderConfig";
+export { ConfigBuilder } from "./ConfigBuilder";
+export type { ProviderConfig } from "./ConfigBuilder";
 
 export { providerFactory } from "./ProviderFactory";
-
-export type {
-  ProviderFactoryOptions,
-} from "./ProviderFactory";
+export type { ProviderFactoryOptions } from "./ProviderFactory";

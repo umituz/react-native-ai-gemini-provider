@@ -1,16 +1,14 @@
-
-import { geminiClientCoreService } from "./gemini-client-core.service";
+import { BaseGeminiService } from "./base-gemini.service";
 import { extractTextFromResponse } from "../utils/gemini-data-transformer.util";
-import { toSdkContent, transformResponse, createTextContent } from "../utils/content-mapper.util";
+import { transformResponse, createTextContent } from "../utils/content-mapper.util";
 import { validatePrompt } from "../utils/validation.util";
-import { createGeminiError } from "../utils/error-mapper.util";
 import type {
   GeminiContent,
   GeminiGenerationConfig,
   GeminiResponse,
 } from "../../domain/entities";
 
-class GeminiTextGenerationService {
+class GeminiTextGenerationService extends BaseGeminiService {
   /**
    * Generate content (text, with optional images)
    *
@@ -23,24 +21,15 @@ class GeminiTextGenerationService {
     generationConfig?: GeminiGenerationConfig,
     signal?: AbortSignal,
   ): Promise<GeminiResponse> {
-    // Validate input
-    if (!contents || contents.length === 0) {
-      throw new Error("Contents array cannot be empty");
-    }
-
-    // Check for early abort
-    if (signal?.aborted) {
-      throw new Error("Request was aborted");
-    }
-
     try {
-      const genModel = geminiClientCoreService.getModel(model);
-      const sdkContents = toSdkContent(contents);
-
-      const requestOptions = {
-        contents: sdkContents as Parameters<typeof genModel.generateContent>[0] extends { contents: infer C } ? C : never,
+      const { genModel, sdkContents } = this.validateAndPrepare({
+        model,
+        contents,
         generationConfig,
-      };
+        signal,
+      });
+
+      const requestOptions = this.createRequestOptions(sdkContents, generationConfig);
 
       const result = signal
         ? await genModel.generateContent(requestOptions, { signal })
@@ -54,18 +43,7 @@ class GeminiTextGenerationService {
 
       return transformResponse(response);
     } catch (error) {
-      // Re-throw as GeminiError if it's an API error
-      if (error instanceof Error && error.name === "GeminiError") {
-        throw error;
-      }
-
-      // Check for abort error
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error("Request was aborted");
-      }
-
-      // Wrap other errors
-      throw createGeminiError(error);
+      return this.handleError(error, "Request was aborted");
     }
   }
 

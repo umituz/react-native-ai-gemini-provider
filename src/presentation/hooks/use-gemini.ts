@@ -1,10 +1,10 @@
-
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { GeminiGenerationConfig } from "../../domain/entities";
 import { DEFAULT_MODELS } from "../../domain/entities";
 import { geminiTextGenerationService, geminiStructuredTextService } from "../../infrastructure/services";
 import { executeWithState, type AsyncStateSetters } from "../../infrastructure/utils/async";
 import { parseJsonResponse } from "../../infrastructure/utils/json-parser.util";
+import { useOperationManager } from "./use-operation-manager";
 
 export interface UseGeminiOptions {
   model?: string;
@@ -28,8 +28,8 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
   const [jsonResult, setJsonResult] = useState<unknown>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const operationIdRef = useRef(0);
+
+  const { executeOperation, abort } = useOperationManager();
 
   const setters: AsyncStateSetters<string, unknown> = useMemo(
     () => ({
@@ -50,63 +50,37 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
 
   const generate = useCallback(
     async (prompt: string) => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-      const currentOpId = ++operationIdRef.current;
-
-      try {
+      await executeOperation(async (signal, _operationId) => {
         await executeWithState(
           setters,
           callbacks,
           async () => {
-            if (currentOpId !== operationIdRef.current) {
-              controller.abort();
-              throw new Error("Operation cancelled by newer request");
-            }
             return geminiTextGenerationService.generateText(
               model,
               prompt,
               options.generationConfig,
-              controller.signal
+              signal
             );
           },
           (text: string) => {
-            if (currentOpId === operationIdRef.current) {
-              setResult(text);
-              options.onSuccess?.(text);
-            }
+            setResult(text);
+            options.onSuccess?.(text);
           }
         );
-      } finally {
-        if (currentOpId === operationIdRef.current) {
-          abortControllerRef.current = null;
-        }
-      }
+      });
     },
-    [model, options.generationConfig, setters, callbacks, options.onSuccess]
+    [model, options.generationConfig, setters, callbacks, options.onSuccess, executeOperation]
   );
 
   const generateJSON = useCallback(
     async <T>(prompt: string, schema?: Record<string, unknown>): Promise<T | null> => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-      const currentOpId = ++operationIdRef.current;
-
-      try {
-        // Create separate setters for JSON generation with proper types
+      return executeOperation(async (signal, _operationId) => {
         const jsonSetters: AsyncStateSetters<unknown, unknown> = {
           setIsLoading: setIsGenerating,
           setError,
           setResult: setJsonResult,
-          setSecondaryResult: (value) => setResult(typeof value === "string" ? value : JSON.stringify(value)),
+          setSecondaryResult: (value) =>
+            setResult(typeof value === "string" ? value : JSON.stringify(value)),
         };
 
         const jsonCallbacks = {
@@ -120,18 +94,13 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
           jsonSetters,
           jsonCallbacks,
           async () => {
-            if (currentOpId !== operationIdRef.current) {
-              controller.abort();
-              throw new Error("Operation cancelled by newer request");
-            }
-
             if (schema) {
               return geminiStructuredTextService.generateStructuredText<T>(
                 model,
                 prompt,
                 schema,
                 options.generationConfig,
-                controller.signal
+                signal
               );
             }
 
@@ -139,50 +108,30 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
               model,
               prompt,
               { ...options.generationConfig, responseMimeType: "application/json" },
-              controller.signal
+              signal
             );
 
             return parseJsonResponse<T>(text);
           },
           (parsed: unknown) => {
-            if (currentOpId === operationIdRef.current) {
-              setJsonResult(parsed);
-              setResult(JSON.stringify(parsed, null, 2));
-            }
+            setJsonResult(parsed);
+            setResult(JSON.stringify(parsed, null, 2));
           }
         );
 
         return operationResult as T | null;
-      } finally {
-        if (currentOpId === operationIdRef.current) {
-          abortControllerRef.current = null;
-        }
-      }
+      });
     },
-    [model, options.generationConfig, callbacks, options.onSuccess]
+    [model, options.generationConfig, callbacks, options.onSuccess, executeOperation]
   );
 
   const reset = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    operationIdRef.current++;
-
+    abort();
     setResult(null);
     setJsonResult(null);
     setIsGenerating(false);
     setError(null);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      operationIdRef.current++;
-    };
-  }, []);
+  }, [abort]);
 
   return { generate, generateJSON, result, jsonResult, isGenerating, error, reset };
 }

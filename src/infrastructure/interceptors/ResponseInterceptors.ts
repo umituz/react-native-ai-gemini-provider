@@ -1,48 +1,18 @@
+import { BaseInterceptor, type BaseContext } from "./BaseInterceptor";
 
-import type { InterceptorErrorStrategy } from "./RequestInterceptors";
-import { telemetryHooks } from "../telemetry";
-
-export interface ResponseContext<T = unknown> {
-  model: string;
-  feature?: string;
+export interface ResponseContext<T = unknown> extends BaseContext {
   data: T;
   duration: number;
-  timestamp: number;
 }
 
 export type ResponseInterceptor<T = unknown> = (
   context: ResponseContext<T>,
 ) => ResponseContext<T> | Promise<ResponseContext<T>>;
 
-class ResponseInterceptors {
-  private interceptors: Array<ResponseInterceptor<unknown>> = [];
-  private errorStrategy: InterceptorErrorStrategy = "fail";
-
-  /**
-   * Register a response interceptor
-   * Interceptors are called in reverse order (last registered = first called)
-   */
-  use<T = unknown>(interceptor: ResponseInterceptor<T>): () => void {
-    this.interceptors.push(interceptor as ResponseInterceptor<unknown>);
-
-    // Return unsubscribe function
-    return () => {
-      const index = this.interceptors.indexOf(interceptor as ResponseInterceptor<unknown>);
-      if (index > -1) {
-        this.interceptors.splice(index, 1);
-      }
-    };
-  }
-
-  /**
-   * Set error handling strategy for interceptors
-   */
-  setErrorStrategy(strategy: InterceptorErrorStrategy): void {
-    this.errorStrategy = strategy;
-  }
-
+class ResponseInterceptors extends BaseInterceptor<ResponseContext<unknown>> {
   /**
    * Apply all interceptors to a response context
+   * Interceptors are called in reverse order (last registered = first called)
    */
   async apply<T>(context: ResponseContext<T>): Promise<ResponseContext<T>> {
     let result: ResponseContext<unknown> = context;
@@ -53,37 +23,12 @@ class ResponseInterceptors {
       try {
         result = await interceptor(result);
       } catch (error) {
-        // Log to telemetry
-        telemetryHooks.logError(context.model, error instanceof Error ? error : new Error(String(error)), context.feature);
-
-        switch (this.errorStrategy) {
-          case "fail":
-            throw new Error(`Response interceptor failed: ${error instanceof Error ? error.message : String(error)}`);
-          case "skip":
-            // Skip this interceptor and continue with previous result
-            break;
-          case "log":
-            // Error already logged, continue with previous result
-            break;
-        }
+        this.handleError(context, error);
+        // If we get here, strategy was "skip" or "log" - continue with previous result
       }
     }
 
     return result as ResponseContext<T>;
-  }
-
-  /**
-   * Clear all interceptors
-   */
-  clear(): void {
-    this.interceptors = [];
-  }
-
-  /**
-   * Get interceptor count
-   */
-  count(): number {
-    return this.interceptors.length;
   }
 }
 

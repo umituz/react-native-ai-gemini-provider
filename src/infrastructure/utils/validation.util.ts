@@ -1,32 +1,17 @@
 /**
- * Validation Utilities
- * Common validation logic for models, configurations, and inputs
+ * Validation Utilities (Legacy)
+ * Maintained for backward compatibility
+ * New code should use validation-composer.util.ts
  */
 
-/** Maximum timeout value (5 minutes) */
-const MAX_TIMEOUT_MS = 300000;
-
-/** Minimum prompt length */
-const MIN_PROMPT_LENGTH = 3;
+import { validateOrThrow, validators } from "./validation-composer.util";
 
 /**
  * Validate model name format
  * @throws Error if model name is invalid
  */
 export function validateModelName(modelName: string): void {
-  if (!modelName || typeof modelName !== "string" || modelName.trim().length === 0) {
-    const displayName: string = modelName === null ? "null" : typeof modelName;
-    throw new Error(
-      `Invalid model name: "${displayName}". Model name must be a non-empty string.`
-    );
-  }
-
-  // Check for valid model format (starts with gemini-)
-  if (!modelName.startsWith("gemini-")) {
-    throw new Error(
-      `Invalid model name: "${modelName}". Gemini models should start with "gemini-".`
-    );
-  }
+  validateOrThrow(modelName, validators.modelName);
 }
 
 /**
@@ -34,16 +19,7 @@ export function validateModelName(modelName: string): void {
  * @throws Error if API key is invalid
  */
 export function validateApiKey(apiKey: string): void {
-  if (!apiKey || typeof apiKey !== "string" || apiKey.trim().length === 0) {
-    throw new Error("API key must be a non-empty string");
-  }
-
-  // Gemini API keys typically start with "AIza"
-  // This is a soft validation - actual validation happens on the API side
-  const trimmedKey = apiKey.trim();
-  if (trimmedKey.length < 10) {
-    throw new Error("API key appears to be invalid (too short)");
-  }
+  validateOrThrow(apiKey, validators.apiKey);
 }
 
 /**
@@ -51,30 +27,7 @@ export function validateApiKey(apiKey: string): void {
  * @throws Error if schema is invalid
  */
 export function validateSchema(schema: Record<string, unknown>): void {
-  if (!schema || typeof schema !== "object") {
-    throw new Error("Schema must be a non-empty object");
-  }
-
-  if (Object.keys(schema).length === 0) {
-    throw new Error("Schema must contain at least one property");
-  }
-
-  // Basic structure validation - schema should have type
-  if (!("type" in schema)) {
-    throw new Error('Schema must have a "type" property (e.g., "object")');
-  }
-
-  const schemaType = schema.type;
-
-  if (schemaType !== "object" && schemaType !== "array") {
-    const typeStr = String(schemaType);
-    throw new Error(`Schema type must be "object" or "array", got "${typeStr}"`);
-  }
-
-  // If type is object, should have properties
-  if (schemaType === "object" && !("properties" in schema)) {
-    throw new Error('Object schema must have a "properties" field');
-  }
+  validateOrThrow(schema, validators.schema);
 }
 
 /**
@@ -82,13 +35,7 @@ export function validateSchema(schema: Record<string, unknown>): void {
  * @throws Error if prompt is invalid
  */
 export function validatePrompt(prompt: string): void {
-  if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
-    throw new Error("Prompt must be a non-empty string");
-  }
-
-  if (prompt.trim().length < MIN_PROMPT_LENGTH) {
-    throw new Error(`Prompt is too short (minimum ${MIN_PROMPT_LENGTH} characters)`);
-  }
+  validateOrThrow(prompt, validators.prompt);
 }
 
 /**
@@ -96,13 +43,7 @@ export function validatePrompt(prompt: string): void {
  * @throws Error if timeout is invalid
  */
 export function validateTimeout(timeout: number): void {
-  if (typeof timeout !== "number" || timeout <= 0) {
-    throw new Error("Timeout must be a positive number");
-  }
-
-  if (timeout > MAX_TIMEOUT_MS) {
-    throw new Error(`Timeout cannot exceed ${MAX_TIMEOUT_MS}ms (5 minutes)`);
-  }
+  validateOrThrow(timeout, validators.timeout);
 }
 
 /**
