@@ -27,7 +27,7 @@ class GeminiStructuredTextService {
     const generationConfig: GeminiGenerationConfig = {
       ...config,
       responseMimeType: "application/json",
-      responseSchema: schema as GenerationConfig["responseSchema"],
+      responseSchema: schema as unknown as GenerationConfig["responseSchema"],
     };
 
     const contents: GeminiContent[] = [
