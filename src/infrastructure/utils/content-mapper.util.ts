@@ -76,7 +76,7 @@ export function createTextContent(
 /**
  * Transform SDK candidate to domain format
  */
-export function transformCandidate(
+function transformCandidate(
   candidate: {
     content: { parts: Array<{ text?: string }>; role?: string };
     finishReason?: string;

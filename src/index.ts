@@ -27,13 +27,12 @@ export {
   DEFAULT_MODELS
 } from "./domain/entities";
 
-// Main Service
-export {
-  geminiProviderService,
-  GeminiProvider,
-} from "./infrastructure/services";
-
-export type { GeminiProviderConfig } from "./infrastructure/services";
+// Services
+export { geminiClient } from "./infrastructure/services/GeminiClient";
+export { textGeneration } from "./infrastructure/services/TextGeneration";
+export { structuredText } from "./infrastructure/services/StructuredText";
+export { streaming } from "./infrastructure/services/Streaming";
+export { geminiProvider, GeminiProvider } from "./infrastructure/services/GeminiProvider";
 
 // React Hook
 export { useGemini } from "./presentation/hooks";

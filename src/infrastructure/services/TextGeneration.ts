@@ -1,20 +1,13 @@
-import { BaseGeminiService } from "./base-gemini.service";
+import { BaseGeminiService } from "./BaseService";
 import { extractTextFromResponse } from "../utils/gemini-data-transformer.util";
 import { transformResponse, createTextContent } from "../utils/content-mapper.util";
-import { validatePrompt } from "../utils/validation.util";
 import type {
   GeminiContent,
   GeminiGenerationConfig,
   GeminiResponse,
 } from "../../domain/entities";
 
-class GeminiTextGenerationService extends BaseGeminiService {
-  /**
-   * Generate content (text, with optional images)
-   *
-   * @throws {GeminiError} For API-specific errors
-   * @throws {Error} For validation or network errors
-   */
+class TextGenerationService extends BaseGeminiService {
   async generateContent(
     model: string,
     contents: GeminiContent[],
@@ -35,38 +28,30 @@ class GeminiTextGenerationService extends BaseGeminiService {
         ? await genModel.generateContent(requestOptions, { signal })
         : await genModel.generateContent(requestOptions);
 
-      const response = result.response;
-
-      if (!response) {
+      if (!result.response) {
         throw new Error("No response received from Gemini API");
       }
 
-      return transformResponse(response);
+      return transformResponse(result.response);
     } catch (error) {
       return this.handleError(error, "Request was aborted");
     }
   }
 
-  /**
-   * Generate text from prompt
-   *
-   * @throws {GeminiError} For API-specific errors
-   * @throws {Error} For validation or network errors
-   */
   async generateText(
     model: string,
     prompt: string,
     config?: GeminiGenerationConfig,
     signal?: AbortSignal,
   ): Promise<string> {
-    // Validate prompt
-    validatePrompt(prompt);
+    if (!prompt || prompt.trim().length < 3) {
+      throw new Error("Prompt must be at least 3 characters");
+    }
 
     const contents: GeminiContent[] = [createTextContent(prompt, "user")];
-
     const response = await this.generateContent(model, contents, config, signal);
     return extractTextFromResponse(response);
   }
 }
 
-export const geminiTextGenerationService = new GeminiTextGenerationService();
+export const textGeneration = new TextGenerationService();

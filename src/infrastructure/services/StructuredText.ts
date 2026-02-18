@@ -1,8 +1,6 @@
-
-import { geminiTextGenerationService } from "./gemini-text-generation.service";
+import { textGeneration } from "./TextGeneration";
 import { parseJsonResponse } from "../utils/json-parser.util";
 import { extractTextFromParts } from "../utils/content-mapper.util";
-import { validateSchema } from "../utils/validation.util";
 import type { GenerationConfig } from "@google/generative-ai";
 import type {
   GeminiContent,
@@ -10,11 +8,7 @@ import type {
   GeminiResponse,
 } from "../../domain/entities";
 
-
-class GeminiStructuredTextService {
-  /**
-   * Generate structured JSON response with schema
-   */
+class StructuredTextService {
   async generateStructuredText<T>(
     model: string,
     prompt: string,
@@ -22,7 +16,9 @@ class GeminiStructuredTextService {
     config?: Omit<GeminiGenerationConfig, "responseMimeType" | "responseSchema">,
     signal?: AbortSignal,
   ): Promise<T> {
-    validateSchema(schema);
+    if (!schema || typeof schema !== "object" || Object.keys(schema).length === 0) {
+      throw new Error("Schema must be a non-empty object");
+    }
 
     const generationConfig: GeminiGenerationConfig = {
       ...config,
@@ -34,7 +30,7 @@ class GeminiStructuredTextService {
       { parts: [{ text: prompt }], role: "user" },
     ];
 
-    const response = await geminiTextGenerationService.generateContent(
+    const response = await textGeneration.generateContent(
       model,
       contents,
       generationConfig,
@@ -44,9 +40,6 @@ class GeminiStructuredTextService {
     return this.parseJSONResponse<T>(response);
   }
 
-  /**
-   * Parse JSON response from Gemini
-   */
   private parseJSONResponse<T>(response: GeminiResponse): T {
     const candidates = response.candidates;
 
@@ -64,4 +57,4 @@ class GeminiStructuredTextService {
   }
 }
 
-export const geminiStructuredTextService = new GeminiStructuredTextService();
+export const structuredText = new StructuredTextService();

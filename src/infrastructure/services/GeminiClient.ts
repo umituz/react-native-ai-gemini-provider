@@ -1,29 +1,22 @@
 import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai";
 import { DEFAULT_MODELS } from "../../domain/entities";
 import type { GeminiConfig } from "../../domain/entities";
-import { validateModelName, validateApiKey } from "../utils/validation.util";
 
 const DEFAULT_CONFIG: Partial<GeminiConfig> = {
   textModel: DEFAULT_MODELS.TEXT,
 };
 
-class GeminiClientCoreService {
+class GeminiClient {
   private client: GoogleGenerativeAI | null = null;
   private config: GeminiConfig | null = null;
   private initialized = false;
 
-  /**
-   * Initialize the Gemini client with configuration
-   *
-   * @throws {Error} If already initialized or API key is invalid
-   */
   initialize(config: GeminiConfig): void {
-    if (this.initialized) {
-      throw new Error("Gemini client already initialized. Call reset() before re-initializing with new config.");
-    }
+    if (this.initialized) return;
 
-    // Validate API key
-    validateApiKey(config.apiKey);
+    if (!config.apiKey || config.apiKey.trim().length < 10) {
+      throw new Error("API key is required and must be at least 10 characters");
+    }
 
     this.client = new GoogleGenerativeAI(config.apiKey);
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -42,24 +35,16 @@ class GeminiClientCoreService {
     return this.client;
   }
 
-  validateInitialization(): void {
+  getModel(modelName?: string): GenerativeModel {
     if (!this.client || !this.initialized) {
       throw new Error("Gemini client not initialized. Call initialize() first.");
-    }
-  }
-
-
-  getModel(modelName?: string): GenerativeModel {
-    this.validateInitialization();
-
-    if (!this.client) {
-      throw new Error("Gemini client not available");
     }
 
     const effectiveModel = modelName || this.config?.textModel || DEFAULT_MODELS.TEXT;
 
-    // Validate model name format
-    validateModelName(effectiveModel);
+    if (!effectiveModel.startsWith("gemini-")) {
+      throw new Error('Model name must start with "gemini-"');
+    }
 
     return this.client.getGenerativeModel({ model: effectiveModel });
   }
@@ -71,4 +56,4 @@ class GeminiClientCoreService {
   }
 }
 
-export const geminiClientCoreService = new GeminiClientCoreService();
+export const geminiClient = new GeminiClient();

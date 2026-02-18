@@ -1,10 +1,10 @@
 import { useState, useCallback, useMemo } from "react";
 import type { GeminiGenerationConfig } from "../../domain/entities";
 import { DEFAULT_MODELS } from "../../domain/entities";
-import { geminiTextGenerationService, geminiStructuredTextService } from "../../infrastructure/services";
+import { textGeneration, structuredText } from "../../infrastructure/services";
 import { executeWithState, type AsyncStateSetters } from "../../infrastructure/utils/async";
 import { parseJsonResponse } from "../../infrastructure/utils/json-parser.util";
-import { useOperationManager } from "./use-operation-manager";
+import { useOperationManager } from "./useOperationManager";
 
 export interface UseGeminiOptions {
   model?: string;
@@ -55,7 +55,7 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
           setters,
           callbacks,
           async () => {
-            return geminiTextGenerationService.generateText(
+            return textGeneration.generateText(
               model,
               prompt,
               options.generationConfig,
@@ -95,7 +95,7 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
           jsonCallbacks,
           async () => {
             if (schema) {
-              return geminiStructuredTextService.generateStructuredText<T>(
+              return structuredText.generateStructuredText<T>(
                 model,
                 prompt,
                 schema,
@@ -104,7 +104,7 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
               );
             }
 
-            const text = await geminiTextGenerationService.generateText(
+            const text = await textGeneration.generateText(
               model,
               prompt,
               { ...options.generationConfig, responseMimeType: "application/json" },

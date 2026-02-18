@@ -1,4 +1,4 @@
-import { geminiClientCoreService } from "../infrastructure/services/gemini-client-core.service";
+import { geminiClient } from "../infrastructure/services/GeminiClient";
 import { ConfigBuilder, type ProviderConfig } from "./ConfigBuilder";
 
 // Re-export for public API
@@ -40,7 +40,7 @@ class ProviderFactory {
 
     // Initialize Gemini client
     const geminiConfig = this.builder.toGeminiConfig();
-    geminiClientCoreService.initialize(geminiConfig);
+    geminiClient.initialize(geminiConfig);
   }
 
   /**

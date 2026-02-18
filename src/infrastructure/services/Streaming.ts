@@ -1,4 +1,4 @@
-import { BaseGeminiService } from "./base-gemini.service";
+import { BaseGeminiService } from "./BaseService";
 import { telemetryHooks } from "../telemetry";
 import { processStream } from "../utils/stream-processor.util";
 import type {
@@ -6,22 +6,7 @@ import type {
   GeminiGenerationConfig,
 } from "../../domain/entities";
 
-class GeminiStreamingService extends BaseGeminiService {
-  /**
-   * Stream content generation
-   *
-   * @throws {GeminiError} For API-specific errors
-   * @throws {Error} For validation or network errors
-   *
-   * @example
-   * ```ts
-   * const fullText = await streamContent(
-   *   "gemini-2.5-flash-lite",
-   *   [{ parts: [{ text: "Hello" }], role: "user" }],
-   *   (chunk) => console.log(chunk)
-   * );
-   * ```
-   */
+class StreamingService extends BaseGeminiService {
   async streamContent(
     model: string,
     contents: GeminiContent[],
@@ -29,7 +14,6 @@ class GeminiStreamingService extends BaseGeminiService {
     generationConfig?: GeminiGenerationConfig,
     signal?: AbortSignal,
   ): Promise<string> {
-    // Validate callback
     if (typeof onChunk !== "function") {
       throw new Error("onChunk must be a function");
     }
@@ -51,27 +35,22 @@ class GeminiStreamingService extends BaseGeminiService {
       return await processStream(
         result.stream,
         onChunk,
-        (error, context) => this.logStreamError(model, error, context)
+        (error, context) => {
+          try {
+            telemetryHooks.logError(
+              model,
+              error instanceof Error ? error : new Error(String(error)),
+              context
+            );
+          } catch {
+            // Silently ignore telemetry errors
+          }
+        }
       );
     } catch (error) {
       return this.handleError(error, "Stream generation was aborted");
     }
   }
-
-  /**
-   * Log stream errors via telemetry
-   */
-  private logStreamError(model: string, error: unknown, context?: string): void {
-    try {
-      telemetryHooks.logError(
-        model,
-        error instanceof Error ? error : new Error(String(error)),
-        context
-      );
-    } catch {
-      // Silently ignore telemetry errors
-    }
-  }
 }
 
-export const geminiStreamingService = new GeminiStreamingService();
+export const streaming = new StreamingService();

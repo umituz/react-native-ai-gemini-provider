@@ -87,7 +87,7 @@ function matchesPattern(message: string, patterns: string[]): boolean {
   });
 }
 
-export function mapGeminiError(error: unknown): GeminiErrorInfo {
+function mapGeminiError(error: unknown): GeminiErrorInfo {
   const message = error instanceof Error ? error.message : String(error);
   const statusCode = getStatusCode(error);
 
@@ -112,14 +112,6 @@ export function mapGeminiError(error: unknown): GeminiErrorInfo {
     originalError: error,
     statusCode,
   };
-}
-
-export function isGeminiErrorRetryable(error: unknown): boolean {
-  return mapGeminiError(error).retryable;
-}
-
-export function categorizeGeminiError(error: unknown): GeminiErrorType {
-  return mapGeminiError(error).type;
 }
 
 export function createGeminiError(error: unknown): GeminiError {
