@@ -64,12 +64,12 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
           },
           (text: string) => {
             setResult(text);
-            options.onSuccess?.(text);
+            // onSuccess is called by executeWithState via callbacks - do not call here again
           }
         );
       });
     },
-    [model, options.generationConfig, setters, callbacks, options.onSuccess, executeOperation]
+    [model, options.generationConfig, setters, callbacks, executeOperation]
   );
 
   const generateJSON = useCallback(
