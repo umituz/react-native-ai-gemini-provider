@@ -18,7 +18,10 @@ export interface ProviderConfig {
  * Provides a fluent API with validation and defaults
  */
 export class ConfigBuilder {
-  private config: Partial<ProviderConfig> = {
+  private config: Omit<Partial<ProviderConfig>, 'textModel' | 'timeout'> & {
+    textModel: string;
+    timeout: number;
+  } = {
     textModel: DEFAULT_MODELS.TEXT,
     timeout: 30000,
   };
@@ -82,8 +85,8 @@ export class ConfigBuilder {
 
     return {
       apiKey: this.config.apiKey,
-      textModel: this.config.textModel!,
-      timeout: this.config.timeout!,
+      textModel: this.config.textModel,
+      timeout: this.config.timeout,
       strategy: this.config.strategy,
     };
   }
