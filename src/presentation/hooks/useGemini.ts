@@ -122,7 +122,7 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
         return operationResult as T | null;
       });
     },
-    [model, options.generationConfig, callbacks, options.onSuccess, executeOperation]
+    [model, options.generationConfig, callbacks, executeOperation]
   );
 
   const reset = useCallback(() => {
