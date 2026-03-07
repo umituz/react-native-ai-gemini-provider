@@ -78,6 +78,12 @@ class GeminiClient {
         }))
       : PERMISSIVE_SAFETY;
 
+    if (__DEV__) {
+      console.log("[GeminiClient.getModel] model:", effectiveModel);
+      console.log("[GeminiClient.getModel] systemInstruction length:", opts.systemInstruction?.length ?? 0);
+      console.log("[GeminiClient.getModel] safetySettings:", JSON.stringify(sdkSafety.map(s => ({ category: s.category, threshold: s.threshold }))));
+    }
+
     return this.client.getGenerativeModel({
       model: effectiveModel,
       ...(opts.systemInstruction && { systemInstruction: opts.systemInstruction }),

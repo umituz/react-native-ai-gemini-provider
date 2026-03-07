@@ -34,7 +34,17 @@ export {
 
 // Services
 export { geminiClient } from "./infrastructure/services/GeminiClient";
-export { createChatSession } from "./infrastructure/services/ChatSession";
+export {
+  createChatSession,
+  sendChatMessage,
+  buildChatHistory,
+  trimChatHistory,
+  resolveAudioMimeType,
+  resolveImageMimeType,
+  type ChatSendResult,
+  type ChatHistoryMessage,
+  type SendChatMessageOptions,
+} from "./infrastructure/services/ChatSession";
 export { textGeneration } from "./infrastructure/services/TextGeneration";
 export { structuredText } from "./infrastructure/services/StructuredText";
 export { streaming } from "./infrastructure/services/Streaming";
