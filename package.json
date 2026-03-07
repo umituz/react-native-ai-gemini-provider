@@ -1,15 +1,20 @@
 {
   "name": "@umituz/react-native-ai-gemini-provider",
-  "version": "3.0.17",
+  "version": "3.0.20",
   "description": "Google Gemini AI text generation provider for React Native applications",
   "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "react-native": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
+    "build": "tsc --project tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
@@ -84,6 +89,7 @@
   },
   "files": [
     "src",
+    "dist",
     "README.md",
     "LICENSE"
   ]

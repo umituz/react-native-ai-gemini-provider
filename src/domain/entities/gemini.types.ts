@@ -111,3 +111,48 @@ export interface GeminiUsageMetadata {
   /** Total number of tokens used */
   totalTokenCount?: number;
 }
+
+/**
+ * Safety setting for a single harm category
+ */
+export interface GeminiSafetySetting {
+  category: GeminiHarmCategory;
+  threshold: GeminiHarmBlockThreshold;
+}
+
+/**
+ * Inline data part for binary content (images, audio)
+ */
+export interface GeminiInlineDataPart {
+  inlineData: { mimeType: string; data: string };
+}
+
+/**
+ * A message part that can be text or inline data
+ */
+export type GeminiMessagePart = GeminiPart | GeminiInlineDataPart;
+
+/**
+ * Options for creating a generative model instance
+ */
+export interface GeminiModelOptions {
+  model?: string;
+  systemInstruction?: string;
+  safetySettings?: GeminiSafetySetting[];
+}
+
+/**
+ * Configuration for a chat session
+ */
+export interface GeminiChatConfig {
+  /** Model name override */
+  model?: string;
+  /** System instruction for the model */
+  systemInstruction?: string;
+  /** Safety settings (defaults to BLOCK_NONE for all categories) */
+  safetySettings?: GeminiSafetySetting[];
+  /** Generation config (temperature, maxOutputTokens, etc.) */
+  generationConfig?: GeminiGenerationConfig;
+  /** Initial conversation history */
+  history?: GeminiContent[];
+}

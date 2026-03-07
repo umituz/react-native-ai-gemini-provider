@@ -11,6 +11,11 @@ export type {
   GeminiHarmBlockThreshold,
   GeminiContent,
   GeminiPart,
+  GeminiInlineDataPart,
+  GeminiMessagePart,
+  GeminiSafetySetting,
+  GeminiModelOptions,
+  GeminiChatConfig,
   GeminiResponse,
   GeminiCandidate,
   GeminiFinishReason,
@@ -29,6 +34,7 @@ export {
 
 // Services
 export { geminiClient } from "./infrastructure/services/GeminiClient";
+export { createChatSession } from "./infrastructure/services/ChatSession";
 export { textGeneration } from "./infrastructure/services/TextGeneration";
 export { structuredText } from "./infrastructure/services/StructuredText";
 export { streaming } from "./infrastructure/services/Streaming";
