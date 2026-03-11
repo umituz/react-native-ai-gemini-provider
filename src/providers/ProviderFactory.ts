@@ -66,15 +66,8 @@ class ProviderFactory {
       throw new Error("Provider not initialized. Call initialize() first.");
     }
 
-    // If API key changes, re-initialize
-    if (updates.apiKey && updates.apiKey !== this.currentConfig.apiKey) {
-      this.initialize({ ...this.currentConfig, ...updates });
-      return;
-    }
-
-    // Otherwise, update using builder
-    this.builder = ConfigBuilder.from({ ...this.currentConfig, ...updates });
-    this.currentConfig = this.builder.build();
+    // Re-initialize with merged config to ensure GeminiClient is updated
+    this.initialize({ ...this.currentConfig, ...updates });
   }
 }
 

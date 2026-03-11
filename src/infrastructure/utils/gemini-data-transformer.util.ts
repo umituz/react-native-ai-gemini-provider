@@ -24,6 +24,10 @@ export function extractTextFromResponse(response: GeminiResponse): string {
       break;
   }
 
+  if (!candidate.content?.parts) {
+    throw new Error("No content in response candidate");
+  }
+
   const textPart = candidate.content.parts.find(
     (p): p is { text: string } => "text" in p && typeof p.text === "string",
   );

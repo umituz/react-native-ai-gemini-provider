@@ -118,9 +118,9 @@ export class GeminiError extends Error {
   static fromError(error: unknown, info: GeminiErrorInfo): GeminiError {
     const geminiError = new GeminiError(info);
 
-    // If original error was an Error, preserve its stack trace
-    if (error instanceof Error && error.stack && !geminiError.stack) {
-      geminiError.stack = error.stack;
+    // Preserve original error's stack trace for better debugging
+    if (error instanceof Error && error.stack) {
+      geminiError.stack = `${geminiError.stack}\nCaused by: ${error.stack}`;
     }
 
     return geminiError;

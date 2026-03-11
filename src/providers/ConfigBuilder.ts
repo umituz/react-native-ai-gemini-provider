@@ -117,8 +117,9 @@ export class ConfigBuilder {
     const builder = new ConfigBuilder();
     if (config.apiKey) builder.withApiKey(config.apiKey);
     if (config.textModel) builder.withTextModel(config.textModel);
-    if (config.timeout) builder.withTimeout(config.timeout);
+    // Apply strategy first (sets default timeout), then explicit timeout overrides it
     if (config.strategy) builder.withStrategy(config.strategy);
+    if (config.timeout != null && config.timeout > 0) builder.withTimeout(config.timeout);
     return builder;
   }
 }

@@ -16,6 +16,10 @@ class StructuredTextService {
     config?: Omit<GeminiGenerationConfig, "responseMimeType" | "responseSchema">,
     signal?: AbortSignal,
   ): Promise<T> {
+    if (!prompt || prompt.trim().length < 3) {
+      throw new Error("Prompt must be at least 3 characters");
+    }
+
     if (!schema || typeof schema !== "object" || Object.keys(schema).length === 0) {
       throw new Error("Schema must be a non-empty object");
     }
@@ -47,7 +51,7 @@ class StructuredTextService {
       throw new Error("No candidates in response");
     }
 
-    const text = extractTextFromParts(candidates[0].content.parts);
+    const text = extractTextFromParts(candidates[0]?.content?.parts);
 
     if (!text || text.trim().length === 0) {
       throw new Error("Empty response received from Gemini");

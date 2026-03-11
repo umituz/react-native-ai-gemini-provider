@@ -1,6 +1,7 @@
 import { geminiClient } from "./GeminiClient";
 import { toSdkContent } from "../utils/content-mapper.util";
 import { createGeminiError } from "../utils/error-mapper.util";
+import { GeminiError } from "../../domain/entities";
 import type { GeminiContent, GeminiGenerationConfig } from "../../domain/entities";
 import type { GenerativeModel } from "@google/generative-ai";
 
@@ -31,7 +32,7 @@ export abstract class BaseGeminiService {
   }
 
   protected handleError(error: unknown, abortMessage: string): never {
-    if (error instanceof Error && error.name === "GeminiError") {
+    if (error instanceof GeminiError) {
       throw error;
     }
 

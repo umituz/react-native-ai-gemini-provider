@@ -6,9 +6,7 @@ import type { GenerationConfig } from "@google/generative-ai";
 export interface GeminiConfig {
   /** API key for authentication */
   apiKey: string;
-  /** Optional base URL for API requests */
-  baseUrl?: string;
-  /** Default timeout in milliseconds */
+  /** Default timeout in milliseconds (used by external consumers for timeout logic) */
   defaultTimeoutMs?: number;
   /** Default model to use for text generation */
   textModel?: string;
@@ -16,11 +14,8 @@ export interface GeminiConfig {
 
 /**
  * Generation configuration for AI requests
- * Extends the SDK's GenerationConfig with proper schema typing
  */
-export type GeminiGenerationConfig = Omit<GenerationConfig, "responseSchema"> & {
-  responseSchema?: GenerationConfig["responseSchema"];
-};
+export type GeminiGenerationConfig = GenerationConfig;
 
 /**
  * Harm categories for content safety filtering

@@ -64,9 +64,20 @@ export function resolveAudioMimeType(extension: string): string {
   return AUDIO_MIME[extension.toLowerCase()] ?? "audio/mp4";
 }
 
+const IMAGE_MIME: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+  gif: "image/gif",
+  heic: "image/heic",
+  heif: "image/heif",
+  bmp: "image/bmp",
+};
+
 /** Resolve MIME type for an image file extension */
 export function resolveImageMimeType(extension: string): string {
-  return extension.toLowerCase() === "png" ? "image/png" : "image/jpeg";
+  return IMAGE_MIME[extension.toLowerCase()] ?? "image/jpeg";
 }
 
 // ─── History Utilities ───────────────────────────────────────────────────────
@@ -90,9 +101,12 @@ export function buildChatHistory(
     const last = result[result.length - 1];
 
     if (last && last.role === role) {
-      const existingText =
-        "text" in last.parts[0] ? (last.parts[0].text ?? "") : "";
-      last.parts[0] = { text: existingText + "\n" + m.content };
+      // Merge by extracting all text from existing parts and appending new content
+      const existingText = last.parts
+        .map((p) => ("text" in p ? (p.text ?? "") : ""))
+        .filter(Boolean)
+        .join("");
+      last.parts = [{ text: existingText + "\n" + m.content }];
     } else {
       result.push({ role, parts: [{ text: m.content }] });
     }
@@ -162,7 +176,17 @@ export function createChatSession(config: GeminiChatConfig = {}) {
       const result = await chat.sendMessage(parts as Part[]);
       if (!result.response) throw new Error("No response from Gemini SDK");
       const candidate = result.response.candidates?.[0];
-      const text = result.response.text();
+
+      // SDK's text() throws on safety-blocked responses with no text
+      let text: string;
+      try {
+        text = result.response.text();
+      } catch {
+        if (String(candidate?.finishReason) === "SAFETY") {
+          throw new Error("Response blocked by safety filter.");
+        }
+        throw new Error("No text content in response");
+      }
 
       if (__DEV__) {
         console.log("[ChatSession.send] <<< GEMINI SDK RESPONSE");
@@ -175,7 +199,7 @@ export function createChatSession(config: GeminiChatConfig = {}) {
 
       return {
         text,
-        finishReason: candidate?.finishReason ?? undefined,
+        finishReason: candidate?.finishReason,
       };
     },
   };
@@ -200,6 +224,10 @@ export function createChatSession(config: GeminiChatConfig = {}) {
 export async function sendChatMessage(
   opts: SendChatMessageOptions,
 ): Promise<string> {
+  if (!opts.message || opts.message.trim().length === 0) {
+    throw new Error("Message cannot be empty");
+  }
+
   if (__DEV__) {
     console.log("═══════════════════════════════════════════════════");
     console.log("[sendChatMessage] >>> START");

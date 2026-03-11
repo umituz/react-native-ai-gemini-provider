@@ -27,7 +27,7 @@ const ERROR_PATTERNS: Array<{
     retryable: false,
   },
   {
-    pattern: ["safety", "blocked", "harmful"],
+    pattern: ["safety", "safety filter", "harmful", "blocked by safety"],
     type: GeminiErrorType.SAFETY,
     retryable: false,
   },
@@ -76,21 +76,46 @@ function matchesPattern(message: string, patterns: string[]): boolean {
   return patterns.some((pattern) => {
     const lowerPattern = pattern.toLowerCase();
 
-    // Use word boundary matching for better accuracy
+    // Use word boundary matching for accuracy
     // This prevents "invalid" from matching "valid"
     const words = lowerPattern.split(/\s+/);
     return words.every((word) => {
-      // Check if the word appears as a whole word or with common punctuation
-      const regex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-      return regex.test(lower) || lower.includes(word);
+      const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(`\\b${escaped}\\b`, 'i').test(lower);
     });
   });
 }
+
+/** Map HTTP status codes to error types as a primary classification signal */
+const STATUS_CODE_MAP: Record<number, { type: GeminiErrorType; retryable: boolean }> = {
+  400: { type: GeminiErrorType.VALIDATION, retryable: false },
+  401: { type: GeminiErrorType.AUTHENTICATION, retryable: false },
+  403: { type: GeminiErrorType.AUTHENTICATION, retryable: false },
+  404: { type: GeminiErrorType.MODEL_NOT_FOUND, retryable: false },
+  429: { type: GeminiErrorType.RATE_LIMIT, retryable: true },
+  500: { type: GeminiErrorType.SERVER, retryable: true },
+  502: { type: GeminiErrorType.SERVER, retryable: true },
+  503: { type: GeminiErrorType.SERVER, retryable: true },
+  504: { type: GeminiErrorType.SERVER, retryable: true },
+};
 
 function mapGeminiError(error: unknown): GeminiErrorInfo {
   const message = error instanceof Error ? error.message : String(error);
   const statusCode = getStatusCode(error);
 
+  // Primary: classify by HTTP status code when available
+  if (statusCode && STATUS_CODE_MAP[statusCode]) {
+    const { type, retryable } = STATUS_CODE_MAP[statusCode];
+    return {
+      type,
+      messageKey: `error.gemini.${type.toLowerCase()}`,
+      retryable,
+      originalError: error,
+      statusCode,
+    };
+  }
+
+  // Secondary: classify by error message pattern
   for (const { pattern, type, retryable } of ERROR_PATTERNS) {
     const patterns = Array.isArray(pattern) ? pattern : [pattern.source];
 

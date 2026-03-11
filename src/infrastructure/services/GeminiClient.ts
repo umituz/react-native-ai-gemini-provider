@@ -26,12 +26,11 @@ class GeminiClient {
   private initialized = false;
 
   initialize(config: GeminiConfig): void {
-    if (this.initialized) return;
-
     if (!config.apiKey || config.apiKey.trim().length < 10) {
       throw new Error("API key is required and must be at least 10 characters");
     }
 
+    // Allow re-initialization with new config (e.g. API key change)
     this.client = new GoogleGenerativeAI(config.apiKey);
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.initialized = true;

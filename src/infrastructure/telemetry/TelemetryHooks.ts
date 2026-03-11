@@ -40,7 +40,9 @@ class TelemetryHooks {
    * Emit a telemetry event to all listeners
    */
   emit(event: TelemetryEvent): void {
-    for (const listener of this.listeners) {
+    // Snapshot to prevent mutation during iteration
+    const snapshot = [...this.listeners];
+    for (const listener of snapshot) {
       // Skip listeners that have failed too many times
       if (this.failedListeners.has(listener)) {
         continue;
@@ -85,12 +87,13 @@ class TelemetryHooks {
    * Log response received
    */
   logResponse(model: string, startTime: number, feature?: string, metadata?: Record<string, unknown>): void {
+    const now = Date.now();
     this.emit({
       type: "response",
-      timestamp: Date.now(),
+      timestamp: now,
       model,
       feature,
-      duration: Date.now() - startTime,
+      duration: now - startTime,
       metadata,
     });
   }

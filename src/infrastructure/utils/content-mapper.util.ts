@@ -159,7 +159,8 @@ export function transformResponse(
 /**
  * Extract text from content parts
  */
-export function extractTextFromParts(parts: GeminiPart[]): string {
+export function extractTextFromParts(parts: GeminiPart[] | undefined): string {
+  if (!parts || parts.length === 0) return "";
   return parts
     .map((part) => ("text" in part ? (part.text || "") : ""))
     .join("");
