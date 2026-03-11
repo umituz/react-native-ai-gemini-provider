@@ -48,15 +48,14 @@ export {
 export { textGeneration } from "./infrastructure/services/TextGeneration";
 export { structuredText } from "./infrastructure/services/StructuredText";
 export { streaming } from "./infrastructure/services/Streaming";
-export { geminiProvider, GeminiProvider } from "./infrastructure/services/GeminiProvider";
 
 // React Hook
-export { useGemini } from "./presentation/hooks";
-export type { UseGeminiOptions, UseGeminiReturn } from "./presentation/hooks";
+export { useGemini } from "./presentation/hooks/useGemini";
+export type { UseGeminiOptions, UseGeminiReturn } from "./presentation/hooks/useGemini";
 
 // Provider Configuration & Factory
-export { ConfigBuilder, providerFactory } from "./providers";
+export { ConfigBuilder, providerFactory } from "./providers/ProviderFactory";
 export type {
   ProviderConfig,
   ProviderFactoryOptions,
-} from "./providers";
+} from "./providers/ProviderFactory";

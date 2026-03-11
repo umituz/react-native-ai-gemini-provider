@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from "react";
 import type { GeminiGenerationConfig } from "../../domain/entities";
 import { DEFAULT_MODELS } from "../../domain/entities";
-import { textGeneration, structuredText } from "../../infrastructure/services";
-import { executeWithState, type AsyncStateSetters } from "../../infrastructure/utils/async";
+import { textGeneration } from "../../infrastructure/services/TextGeneration";
+import { structuredText } from "../../infrastructure/services/StructuredText";
+import { executeWithState, type AsyncStateSetters } from "../../infrastructure/utils/async/execute-state.util";
 import { parseJsonResponse } from "../../infrastructure/utils/json-parser.util";
 import { useOperationManager } from "./useOperationManager";
 

@@ -1,5 +1,5 @@
 import { BaseGeminiService } from "./BaseService";
-import { telemetryHooks } from "../telemetry";
+import { telemetryHooks } from "../telemetry/TelemetryHooks";
 import { processStream } from "../utils/stream-processor.util";
 import type {
   GeminiContent,
