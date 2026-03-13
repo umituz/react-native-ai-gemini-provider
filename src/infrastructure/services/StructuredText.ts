@@ -5,7 +5,6 @@ import type { GenerationConfig } from "@google/generative-ai";
 import type {
   GeminiContent,
   GeminiGenerationConfig,
-  GeminiResponse,
 } from "../../domain/entities";
 
 class StructuredTextService {
@@ -41,18 +40,12 @@ class StructuredTextService {
       signal,
     );
 
-    return this.parseJSONResponse<T>(response);
-  }
-
-  private parseJSONResponse<T>(response: GeminiResponse): T {
     const candidates = response.candidates;
-
     if (!candidates || candidates.length === 0) {
       throw new Error("No candidates in response");
     }
 
     const text = extractTextFromParts(candidates[0]?.content?.parts);
-
     if (!text || text.trim().length === 0) {
       throw new Error("Empty response received from Gemini");
     }

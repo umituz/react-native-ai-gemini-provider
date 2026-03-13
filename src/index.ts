@@ -39,8 +39,6 @@ export {
   sendChatMessage,
   buildChatHistory,
   trimChatHistory,
-  resolveAudioMimeType,
-  resolveImageMimeType,
   type ChatSendResult,
   type ChatHistoryMessage,
   type SendChatMessageOptions,

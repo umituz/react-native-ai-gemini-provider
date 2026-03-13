@@ -21,12 +21,18 @@ export async function processStream(
   let fullText = "";
 
   for await (const chunk of stream) {
-    // chunk.text() errors are critical (e.g. safety blocks mid-stream)
-    // and must propagate, unlike callback errors which are safe to swallow
-    const chunkText = chunk.text();
-    if (chunkText) {
-      fullText += chunkText;
-      safeCallChunk(onChunk, chunkText, onError);
+    try {
+      // chunk.text() can throw critical errors (e.g. safety blocks mid-stream)
+      // and must propagate, unlike callback errors which are safe to swallow
+      const chunkText = chunk.text();
+      if (chunkText) {
+        fullText += chunkText;
+        safeCallChunk(onChunk, chunkText, onError);
+      }
+    } catch (chunkError) {
+      // Log chunk error but re-throw to properly fail the stream
+      logError(onError, chunkError, "stream-chunk");
+      throw chunkError;
     }
   }
 

@@ -109,17 +109,4 @@ export class ConfigBuilder {
   static create(): ConfigBuilder {
     return new ConfigBuilder();
   }
-
-  /**
-   * Create from existing config (for updates)
-   */
-  static from(config: Partial<ProviderConfig>): ConfigBuilder {
-    const builder = new ConfigBuilder();
-    if (config.apiKey) builder.withApiKey(config.apiKey);
-    if (config.textModel) builder.withTextModel(config.textModel);
-    // Apply strategy first (sets default timeout), then explicit timeout overrides it
-    if (config.strategy) builder.withStrategy(config.strategy);
-    if (config.timeout != null && config.timeout > 0) builder.withTimeout(config.timeout);
-    return builder;
-  }
 }

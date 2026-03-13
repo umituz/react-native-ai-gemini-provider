@@ -4,6 +4,7 @@ import { createGeminiError } from "../utils/error-mapper.util";
 import { GeminiError } from "../../domain/entities";
 import type { GeminiContent, GeminiGenerationConfig } from "../../domain/entities";
 import type { GenerativeModel } from "@google/generative-ai";
+import type { Part } from "@google/generative-ai";
 
 export interface BaseRequestOptions {
   model: string;
@@ -15,7 +16,7 @@ export interface BaseRequestOptions {
 export abstract class BaseGeminiService {
   protected validateAndPrepare(options: BaseRequestOptions): {
     genModel: GenerativeModel;
-    sdkContents: Array<{ role: string; parts: Array<{ text: string }> }>;
+    sdkContents: Array<{ role: string; parts: Part[] }>;
   } {
     if (!options.contents || options.contents.length === 0) {
       throw new Error("Contents array cannot be empty");
@@ -44,7 +45,7 @@ export abstract class BaseGeminiService {
   }
 
   protected createRequestOptions(
-    sdkContents: Array<{ role: string; parts: Array<{ text: string }> }>,
+    sdkContents: Array<{ role: string; parts: Part[] }>,
     generationConfig?: GeminiGenerationConfig
   ) {
     return { contents: sdkContents, generationConfig };

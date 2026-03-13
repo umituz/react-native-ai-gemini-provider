@@ -14,40 +14,31 @@ export interface ProviderFactoryOptions {
 
 class ProviderFactory {
   private currentConfig: ProviderConfig | null = null;
-  private builder: ConfigBuilder | null = null;
 
   /**
    * Initialize provider with configuration
    */
   initialize(options: ProviderFactoryOptions): void {
-    // Build configuration using builder pattern
-    this.builder = ConfigBuilder.create()
-      .withApiKey(options.apiKey);
+    // Build configuration using builder pattern (inline, no state needed)
+    const builder = ConfigBuilder.create().withApiKey(options.apiKey);
 
     if (options.strategy) {
-      this.builder.withStrategy(options.strategy);
+      builder.withStrategy(options.strategy);
     }
 
     if (options.textModel) {
-      this.builder.withTextModel(options.textModel);
+      builder.withTextModel(options.textModel);
     }
 
     if (options.timeout) {
-      this.builder.withTimeout(options.timeout);
+      builder.withTimeout(options.timeout);
     }
 
-    this.currentConfig = this.builder.build();
+    this.currentConfig = builder.build();
 
     // Initialize Gemini client
-    const geminiConfig = this.builder.toGeminiConfig();
+    const geminiConfig = builder.toGeminiConfig();
     geminiClient.initialize(geminiConfig);
-  }
-
-  /**
-   * Get current configuration
-   */
-  getConfig(): ProviderConfig | null {
-    return this.currentConfig;
   }
 
   /**

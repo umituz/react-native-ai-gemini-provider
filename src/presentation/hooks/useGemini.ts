@@ -4,7 +4,6 @@ import { DEFAULT_MODELS } from "../../domain/entities";
 import { textGeneration } from "../../infrastructure/services/TextGeneration";
 import { structuredText } from "../../infrastructure/services/StructuredText";
 import { executeWithState, type AsyncStateSetters } from "../../infrastructure/utils/async/execute-state.util";
-import { parseJsonResponse } from "../../infrastructure/utils/json-parser.util";
 import { useOperationManager } from "./useOperationManager";
 
 export interface UseGeminiOptions {
@@ -16,7 +15,7 @@ export interface UseGeminiOptions {
 
 export interface UseGeminiReturn {
   generate: (prompt: string) => Promise<void>;
-  generateJSON: <T>(prompt: string, schema?: Record<string, unknown>) => Promise<T | null>;
+  generateJSON: <T>(prompt: string, schema: Record<string, unknown>) => Promise<T | null>;
   result: string | null;
   jsonResult: unknown;
   isGenerating: boolean;
@@ -65,7 +64,6 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
           },
           (text: string) => {
             setResult(text);
-            // onSuccess is called by executeWithState via callbacks - do not call here again
           }
         );
       });
@@ -74,7 +72,7 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
   );
 
   const generateJSON = useCallback(
-    async <T>(prompt: string, schema?: Record<string, unknown>): Promise<T | null> => {
+    async <T>(prompt: string, schema: Record<string, unknown>): Promise<T | null> => {
       return executeOperation(async (signal, _operationId) => {
         const jsonSetters: AsyncStateSetters<unknown, unknown> = {
           setIsLoading: setIsGenerating,
@@ -95,24 +93,13 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
           jsonSetters,
           jsonCallbacks,
           async () => {
-            if (schema) {
-              return structuredText.generateStructuredText<T>(
-                model,
-                prompt,
-                schema,
-                options.generationConfig,
-                signal
-              );
-            }
-
-            const text = await textGeneration.generateText(
+            return structuredText.generateStructuredText<T>(
               model,
               prompt,
-              { ...options.generationConfig, responseMimeType: "application/json" },
+              schema,
+              options.generationConfig,
               signal
             );
-
-            return parseJsonResponse<T>(text);
           },
           (parsed: unknown) => {
             setJsonResult(parsed);

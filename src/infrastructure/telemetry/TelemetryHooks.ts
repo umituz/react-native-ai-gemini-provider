@@ -1,10 +1,9 @@
 
 export interface TelemetryEvent {
-  type: "request" | "response" | "error" | "retry";
+  type: "error";
   timestamp: number;
   model?: string;
   feature?: string;
-  duration?: number;
   metadata?: Record<string, unknown>;
 }
 
@@ -18,6 +17,15 @@ class TelemetryHooks {
 
   /**
    * Register a telemetry listener
+   *
+   * @returns Unsubscribe function - IMPORTANT: Call this when done listening to prevent memory leaks
+   *
+   * @example
+   * ```ts
+   * const unsubscribe = telemetryHooks.subscribe((event) => console.log(event));
+   * // ... later when done
+   * unsubscribe(); // Prevents memory leak
+   * ```
    */
   subscribe(listener: TelemetryListener): () => void {
     this.listeners.push(listener);
@@ -70,35 +78,6 @@ class TelemetryHooks {
   }
 
   /**
-   * Log request start
-   */
-  logRequest(model: string, feature?: string): number {
-    const timestamp = Date.now();
-    this.emit({
-      type: "request",
-      timestamp,
-      model,
-      feature,
-    });
-    return timestamp;
-  }
-
-  /**
-   * Log response received
-   */
-  logResponse(model: string, startTime: number, feature?: string, metadata?: Record<string, unknown>): void {
-    const now = Date.now();
-    this.emit({
-      type: "response",
-      timestamp: now,
-      model,
-      feature,
-      duration: now - startTime,
-      metadata,
-    });
-  }
-
-  /**
    * Log error
    */
   logError(model: string, error: Error, feature?: string): void {
@@ -115,19 +94,6 @@ class TelemetryHooks {
   }
 
   /**
-   * Log retry attempt
-   */
-  logRetry(model: string, attempt: number, feature?: string): void {
-    this.emit({
-      type: "retry",
-      timestamp: Date.now(),
-      model,
-      feature,
-      metadata: { attempt },
-    });
-  }
-
-  /**
    * Remove a specific listener
    */
   unsubscribe(listener: TelemetryListener): void {
@@ -138,32 +104,6 @@ class TelemetryHooks {
     // Clean up failure tracking
     this.failedListeners.delete(listener);
     this.listenerFailureCounts.delete(listener);
-  }
-
-  /**
-   * Reset failure counts for all listeners (clear blacklist)
-   */
-  resetFailures(): void {
-    this.failedListeners.clear();
-    for (const listener of this.listeners) {
-      this.listenerFailureCounts.set(listener, 0);
-    }
-  }
-
-  /**
-   * Clear all listeners
-   */
-  clear(): void {
-    this.listeners = [];
-    this.failedListeners.clear();
-    this.listenerFailureCounts.clear();
-  }
-
-  /**
-   * Get current listener count
-   */
-  getListenerCount(): number {
-    return this.listeners.length;
   }
 }
 

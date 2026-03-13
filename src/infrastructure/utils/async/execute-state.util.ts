@@ -26,7 +26,6 @@ export interface AsyncStateSetters<T = string, U = unknown> {
  */
 export interface AsyncStateConfig<T = string> {
   resetState?: boolean;
-  throwOnError?: boolean;
   transformResult?: (result: T) => T;
 }
 
@@ -60,7 +59,6 @@ export async function executeWithState<T, U = unknown>(
 ): Promise<T | null> {
   const {
     resetState = true,
-    throwOnError = false,
     transformResult,
   } = config;
 
@@ -87,10 +85,6 @@ export async function executeWithState<T, U = unknown>(
 
     setters.setError(errorMessage);
     callbacks.onError?.(errorMessage);
-
-    if (throwOnError) {
-      throw err;
-    }
 
     return null;
   } finally {

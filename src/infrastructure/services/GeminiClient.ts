@@ -26,26 +26,21 @@ class GeminiClient {
   private initialized = false;
 
   initialize(config: GeminiConfig): void {
-    if (!config.apiKey || config.apiKey.trim().length < 10) {
+    const apiKey = config.apiKey?.trim();
+
+    if (!apiKey || apiKey.length < 10) {
       throw new Error("API key is required and must be at least 10 characters");
     }
 
+    // Basic format validation for Google AI API keys (starts with "AIza")
+    if (!apiKey.startsWith("AIza")) {
+      throw new Error('Invalid API key format. Google AI API keys should start with "AIza"');
+    }
+
     // Allow re-initialization with new config (e.g. API key change)
-    this.client = new GoogleGenerativeAI(config.apiKey);
-    this.config = { ...DEFAULT_CONFIG, ...config };
+    this.client = new GoogleGenerativeAI(apiKey);
+    this.config = { ...DEFAULT_CONFIG, ...config, apiKey };
     this.initialized = true;
-  }
-
-  isInitialized(): boolean {
-    return this.initialized;
-  }
-
-  getConfig(): GeminiConfig | null {
-    return this.config;
-  }
-
-  getClient(): GoogleGenerativeAI | null {
-    return this.client;
   }
 
   /**
@@ -71,17 +66,34 @@ class GeminiClient {
 
     // Map package safety settings to SDK format
     const sdkSafety: SafetySetting[] = opts.safetySettings
-      ? opts.safetySettings.map((s) => ({
-          category: s.category as unknown as HarmCategory,
-          threshold: s.threshold as unknown as HarmBlockThreshold,
-        }))
-      : PERMISSIVE_SAFETY;
+      ? opts.safetySettings.map((s) => {
+          // Validate safety settings to prevent runtime errors
+          const validCategories = [
+            HarmCategory.HARM_CATEGORY_HARASSMENT,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+          ];
 
-    if (__DEV__) {
-      console.log("[GeminiClient.getModel] model:", effectiveModel);
-      console.log("[GeminiClient.getModel] systemInstruction length:", opts.systemInstruction?.length ?? 0);
-      console.log("[GeminiClient.getModel] safetySettings:", JSON.stringify(sdkSafety.map(s => ({ category: s.category, threshold: s.threshold }))));
-    }
+          const validThresholds = [
+            HarmBlockThreshold.BLOCK_NONE,
+            HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            HarmBlockThreshold.BLOCK_ONLY_HIGH,
+          ];
+
+          // Check if category and threshold are valid enum values
+          const category = validCategories.includes(s.category as unknown as HarmCategory)
+            ? (s.category as unknown as HarmCategory)
+            : HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT; // Fallback to safest
+
+          const threshold = validThresholds.includes(s.threshold as unknown as HarmBlockThreshold)
+            ? (s.threshold as unknown as HarmBlockThreshold)
+            : HarmBlockThreshold.BLOCK_NONE; // Fallback to most permissive
+
+          return { category, threshold };
+        })
+      : PERMISSIVE_SAFETY;
 
     return this.client.getGenerativeModel({
       model: effectiveModel,

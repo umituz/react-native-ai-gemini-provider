@@ -3,6 +3,7 @@
  * Handles transformation between domain content and SDK format
  */
 
+import type { Part } from "@google/generative-ai";
 import type {
   GeminiContent,
   GeminiPart,
@@ -49,14 +50,21 @@ function isValidProbability(value: string): value is GeminiSafetyRating["probabi
 
 /**
  * Convert domain content to SDK format
+ * Preserves both text and inlineData parts
  */
 export function toSdkContent(contents: GeminiContent[]): Array<{
   role: string;
-  parts: Array<{ text: string }>;
+  parts: Part[];
 }> {
   return contents.map((content) => ({
     role: content.role || "user",
-    parts: content.parts.map((part) => ({ text: part.text })),
+    parts: content.parts.map((part) => {
+      if ("text" in part) {
+        return { text: part.text } as Part;
+      }
+      // For inlineData and other part types, cast to SDK Part type
+      return part as Part;
+    }),
   }));
 }
 
