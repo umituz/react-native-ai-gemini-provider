@@ -86,11 +86,6 @@ export class GeminiError extends Error {
     this.retryable = info.retryable;
     this.statusCode = info.statusCode;
     this.originalError = info.originalError;
-
-    // Maintains proper stack trace (only available on V8)
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, GeminiError);
-    }
   }
 
   /**

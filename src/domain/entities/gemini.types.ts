@@ -48,7 +48,9 @@ export interface GeminiContent {
 /**
  * Individual content part
  */
-export type GeminiPart = { text: string };
+export type GeminiPart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } };
 
 /**
  * Response structure from Gemini API

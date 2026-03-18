@@ -1,9 +1,17 @@
 /**
  * @umituz/react-native-ai-gemini-provider
  * Google Gemini AI provider for React Native applications
+ *
+ * Clean DDD Architecture - Production Ready
+ *
+ * @version 4.0.0
  */
 
-// Domain Types
+// ============================================================================
+// DOMAIN LAYER - Core business logic and types
+// ============================================================================
+
+// Domain Entities
 export type {
   GeminiConfig,
   GeminiGenerationConfig,
@@ -29,31 +37,108 @@ export {
   GeminiErrorType,
   GeminiError,
   GEMINI_MODELS,
-  DEFAULT_MODELS
+  DEFAULT_MODELS,
 } from "./domain/entities";
 
-// Services
-export { geminiClient } from "./infrastructure/services/GeminiClient";
-export {
-  createChatSession,
-  sendChatMessage,
-  buildChatHistory,
-  trimChatHistory,
-  type ChatSendResult,
-  type ChatHistoryMessage,
-  type SendChatMessageOptions,
-} from "./infrastructure/services/ChatSession";
-export { textGeneration } from "./infrastructure/services/TextGeneration";
-export { structuredText } from "./infrastructure/services/StructuredText";
-export { streaming } from "./infrastructure/services/Streaming";
+// Value Objects
+export { ApiKey, ModelName, Timeout } from "./domain/value-objects";
 
-// React Hook
-export { useGemini } from "./presentation/hooks/useGemini";
-export type { UseGeminiOptions, UseGeminiReturn } from "./presentation/hooks/useGemini";
+// Domain Services
+export { ValidationService, ValidationError } from "./domain/services/validation.service";
 
-// Provider Configuration & Factory
-export { ConfigBuilder, providerFactory } from "./providers/ProviderFactory";
+// Repository Interfaces
 export type {
-  ProviderConfig,
-  ProviderFactoryOptions,
-} from "./providers/ProviderFactory";
+  ITextGenerationRepository,
+  TextGenerationRequest,
+} from "./domain/repositories/text-generation.repository";
+
+export type {
+  IStreamingRepository,
+  StreamingRequest,
+} from "./domain/repositories/streaming.repository";
+
+export type {
+  IStructuredTextRepository,
+  StructuredGenerationRequest,
+} from "./domain/repositories/structured-text.repository";
+
+// ============================================================================
+// APPLICATION LAYER - Use cases and orchestration
+// ============================================================================
+
+// Use Cases
+export {
+  GenerateTextUseCase,
+  StreamContentUseCase,
+  GenerateJSONUseCase,
+} from "./application/use-cases";
+
+export type {
+  GenerateTextOptions,
+  GenerateTextResult,
+  StreamContentOptions,
+  GenerateJSONOptions,
+  GenerateJSONResult,
+} from "./application/use-cases";
+
+// Builders
+export { GeminiConfigBuilder } from "./application/builders";
+
+export type { GeminiConfigOptions } from "./application/builders";
+
+// Providers
+export { geminiProvider, GeminiProviderClass } from "./application/providers";
+
+export type { GeminiProvider } from "./application/providers";
+
+// ============================================================================
+// INFRASTRUCTURE LAYER - External integrations
+// ============================================================================
+
+// Mappers
+export {
+  ContentMapper,
+  ResponseMapper,
+  ErrorMapper,
+} from "./infrastructure/mappers";
+
+// SDK Adapter
+export {
+  GeminiSDKAdapter,
+  GeminiClient,
+  geminiClient,
+} from "./infrastructure/external";
+
+// Repository Implementations
+export {
+  BaseGeminiRepository,
+  GeminiTextRepository,
+  GeminiStreamingRepository,
+  GeminiStructuredTextRepository,
+} from "./infrastructure/repositories";
+
+// Utilities
+export { parseJsonResponse } from "./infrastructure/utils/json-parser.util";
+
+// ============================================================================
+// PRESENTATION LAYER - React hooks and providers
+// ============================================================================
+
+// React Hooks
+export { useGemini, useOperationManager } from "./presentation/hooks";
+
+export type {
+  UseGeminiOptions,
+  UseGeminiReturn,
+} from "./presentation/hooks";
+
+export type { OperationManager } from "./presentation/hooks/use-operation-manager.hook";
+
+// React Provider Component
+export {
+  GeminiProviderComponent,
+  useGeminiContext,
+  useGeminiInitializer,
+} from "./presentation/providers";
+
+export type { GeminiProviderProps } from "./presentation/providers";
