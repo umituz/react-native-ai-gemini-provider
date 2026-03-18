@@ -3,27 +3,14 @@
  * Reusable functions for text length and character budget calculations
  */
 
-/**
- * Calculate total character count in an array of text objects
- * @param items - Array of objects with text content
- * @param getText - Function to extract text from each item
- * @returns Total character count
- */
-export function calculateTotalChars<T>(
+function calculateTotalChars<T>(
   items: readonly T[],
   getItemLength: (item: T) => number
 ): number {
   return items.reduce((sum, item) => sum + getItemLength(item), 0);
 }
 
-/**
- * Check if adding an item would exceed the character budget
- * @param currentTotal - Current total character count
- * @param itemLength - Length of item to add
- * @param maxBudget - Maximum allowed budget
- * @returns true if within budget, false otherwise
- */
-export function fitsWithinBudget(
+function fitsWithinBudget(
   currentTotal: number,
   itemLength: number,
   maxBudget: number
@@ -34,12 +21,6 @@ export function fitsWithinBudget(
 /**
  * Trim array to fit within character budget while keeping minimum items
  * Keeps the last `minItems` regardless of budget, then adds as many as possible from the end
- *
- * @param items - Array to trim
- * @param getItemLength - Function to get length of each item
- * @param maxBudget - Maximum total length allowed
- * @param minItems - Minimum number of items to keep (from the end)
- * @returns Trimmed array
  */
 export function trimArrayByCharBudget<T>(
   items: readonly T[],
